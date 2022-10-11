@@ -10,7 +10,7 @@
 <channel>
 	<title>Uncategorized &#8211; Nord Freeride</title>
 	<atom:link href="http://localhost/landing-page/wordpress/category/uncategorized/feed/" rel="self" type="application/rss+xml" />
-	<link>https://github.com/ylberxhambazi/nord-freeride.git</link>
+	<link>https://ylberxhambazi.github.io/nord-freeride</link>
 	<description></description>
 	<lastBuildDate>Fri, 23 Sep 2022 12:29:18 +0000</lastBuildDate>
 	<language>en-US</language>
@@ -21,13 +21,13 @@
 	<generator>https://wordpress.org/?v=6.0.2</generator>
 	<item>
 		<title>Hello world!</title>
-		<link>https://github.com/ylberxhambazi/nord-freeride.git/hello-world/</link>
-					<comments>https://github.com/ylberxhambazi/nord-freeride.git/hello-world/#comments</comments>
+		<link>https://ylberxhambazi.github.io/nord-freeride/hello-world/</link>
+					<comments>https://ylberxhambazi.github.io/nord-freeride/hello-world/#comments</comments>
 		
 		<dc:creator><![CDATA[ylber]]></dc:creator>
 		<pubDate>Fri, 23 Sep 2022 12:29:18 +0000</pubDate>
 				<category><![CDATA[Uncategorized]]></category>
-		<guid isPermaLink="false">https://github.com/ylberxhambazi/nord-freeride.git/?p=1</guid>
+		<guid isPermaLink="false">https://ylberxhambazi.github.io/nord-freeride/?p=1</guid>
 
 					<description><![CDATA[Welcome to WordPress. This is your first post. Edit or delete it, then start writing!]]></description>
 										<content:encoded><![CDATA[
@@ -38,7 +38,7 @@
 <!--/themify_builder_content-->
 ]]></content:encoded>
 					
-					<wfw:commentRss>https://github.com/ylberxhambazi/nord-freeride.git/hello-world/feed/</wfw:commentRss>
+					<wfw:commentRss>https://ylberxhambazi.github.io/nord-freeride/hello-world/feed/</wfw:commentRss>
 			<slash:comments>1</slash:comments>
 		
 		
