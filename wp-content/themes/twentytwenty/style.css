@@ -1362,7 +1362,7 @@ ul.social-icons li {
 
 #site-header {
 	background: #fff;
-    position: absolute;
+    position: relative;
     width: 100%;
 }
 
