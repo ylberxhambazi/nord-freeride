@@ -130,7 +130,7 @@ body {
 	box-sizing: border-box;
 	color: #000;
 	/*font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;*/
-	font-family: 'Chalkduster', sans-serif;
+	font-family: 'Chalkduster', 'Lato', sans-serif;
 	font-size: 1.8rem;
 	letter-spacing: -0.015em;
 	text-align: left;
@@ -156,7 +156,9 @@ body {
 #site-content {
 	overflow: hidden;
 }
-
+.wp-post-image {
+    margin: 0 auto;
+}
 
 /* Clearing ---------------------------------- */
 
@@ -1359,7 +1361,7 @@ ul.social-icons li {
 
 
 #site-header {
-	background: transparent;
+	background: #fff;
     position: absolute;
     width: 100%;
 }
@@ -4494,6 +4496,7 @@ ul.footer-social li {
 	align-items: baseline;
 	display: flex;
 	justify-content: space-between;
+	text-align: center;
 }
 
 #site-footer a {
@@ -5652,6 +5655,7 @@ a.to-the-top > * {
 	.footer-credits {
 		display: flex;
 		flex-wrap: wrap;
+		flex-direction:column;
 	}
 
 	.footer-copyright {
