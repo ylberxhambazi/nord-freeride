@@ -658,7 +658,7 @@ iframe.instagram-media {
 .gallery {
 	display: flex;
 	flex-wrap: wrap;
-	/*margin: 3em 0 3em -0.8em;*/
+	margin: 3em 0 3em -0.8em;
 	width: calc(100% + 1.6em);
 }
 
