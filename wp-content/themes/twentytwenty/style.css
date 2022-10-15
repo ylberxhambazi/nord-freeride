@@ -130,7 +130,7 @@ body {
 	box-sizing: border-box;
 	color: #000;
 	/*font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;*/
-	font-family: 'Chalkduster', 'Lato', sans-serif;
+	font-family: 'Lato', sans-serif;
 	font-size: 1.8rem;
 	letter-spacing: -0.015em;
 	text-align: left;
@@ -140,7 +140,7 @@ body {
 
 	body {
 		/*font-family: "Inter var", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;*/
-		font-family: 'Chalkduster', sans-serif;
+		font-family: 'Lato', sans-serif;
 	}
 }
 
@@ -658,7 +658,7 @@ iframe.instagram-media {
 .gallery {
 	display: flex;
 	flex-wrap: wrap;
-	margin: 3em 0 3em -0.8em;
+	/*margin: 3em 0 3em -0.8em;*/
 	width: calc(100% + 1.6em);
 }
 
@@ -4496,7 +4496,8 @@ ul.footer-social li {
 	align-items: baseline;
 	display: flex;
 	justify-content: space-between;
-	text-align: center;
+	text-align: left;
+	font-family: 'Lato';
 }
 
 #site-footer a {
@@ -5659,7 +5660,7 @@ a.to-the-top > * {
 	}
 
 	.footer-copyright {
-		font-weight: 700;
+		font-weight: 500;
 	}
 
 	.privacy-policy {
