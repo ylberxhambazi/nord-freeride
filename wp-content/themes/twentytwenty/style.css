@@ -1,8 +1,8 @@
 /*
 Theme Name: Twenty Twenty
 Text Domain: twentytwenty
-Version: 2.0
-Tested up to: 6.0
+Version: 2.1
+Tested up to: 6.1
 Requires at least: 4.7
 Requires PHP: 5.2.4
 Description: Our default theme for 2020 is designed to take full advantage of the flexibility of the block editor. Organizations and businesses have the ability to create dynamic landing pages with endless layouts using the group and column blocks. The centered content column and fine-tuned typography also makes it perfect for traditional blogs. Complete editor styles give you a good idea of what your content will look like, even before you publish. You can give your site a personal touch by changing the background colors and the accent color in the Customizer. The colors of all elements on your site are automatically calculated based on the colors you pick, ensuring a high, accessible color contrast for your visitors.
@@ -129,8 +129,7 @@ body {
 	background: #f5efe0;
 	box-sizing: border-box;
 	color: #000;
-	/*font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;*/
-	font-family: 'Lato', sans-serif;
+	font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;
 	font-size: 1.8rem;
 	letter-spacing: -0.015em;
 	text-align: left;
@@ -139,8 +138,7 @@ body {
 @supports ( font-variation-settings: normal ) {
 
 	body {
-		/*font-family: "Inter var", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;*/
-		font-family: 'Lato', sans-serif;
+		font-family: "Inter var", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;
 	}
 }
 
@@ -156,9 +154,7 @@ body {
 #site-content {
 	overflow: hidden;
 }
-.wp-post-image {
-    margin: 0 auto;
-}
+
 
 /* Clearing ---------------------------------- */
 
@@ -460,7 +456,7 @@ hr.styled-separator::after {
 }
 
 a {
-	color: #fff;
+	color: #cd2653;
 	text-decoration: underline;
 }
 
@@ -1362,8 +1358,7 @@ ul.social-icons li {
 
 #site-header {
 	background: #fff;
-    position: relative;
-    width: 100%;
+	position: relative;
 }
 
 .header-inner {
@@ -1401,7 +1396,7 @@ body:not(.enable-search-modal) .header-titles-wrapper {
 }
 
 .site-title a {
-	color: #fff;
+	color: inherit;
 	display: block;
 	text-decoration: none;
 }
@@ -2811,6 +2806,8 @@ h2.entry-title {
 }
 
 .has-text-align-right {
+
+	/*rtl:ignore*/
 	text-align: right;
 }
 
@@ -3042,6 +3039,7 @@ h2.entry-title {
 }
 
 .is-style-outline .wp-block-button__link {
+	border: 2px solid;
 	padding: calc(1.1em - 0.2rem) calc(1.44em - 0.2rem);
 }
 
@@ -3936,17 +3934,8 @@ div.comment:first-of-type {
 	text-align: center;
 }
 
-.comment-respond .comment-notes a,
-.comment-respond .logged-in-as a {
-	color: inherit;
-	text-decoration: none;
-}
-
-.comment-respond .comment-notes a:focus,
-.comment-respond .comment-notes a:hover,
-.comment-respond .logged-in-as a:focus,
-.comment-respond .logged-in-as a:hover {
-	text-decoration: underline;
+.comment-respond .required-field-message {
+	display: inline-block;
 }
 
 .comment-respond p {
@@ -4377,6 +4366,12 @@ div.comment:first-of-type {
 
 /* Widget: Text ------------------------------ */
 
+/* Widget: Blocks ---------------------------- */
+
+.widget .wp-block-social-links li {
+	margin-top: 0;
+}
+
 
 /* -------------------------------------------------------------------------- */
 
@@ -4394,7 +4389,7 @@ div.comment:first-of-type {
 
 .footer-top-visible .footer-nav-widgets-wrapper,
 .footer-top-hidden #site-footer {
-	margin-top: 0rem;
+	margin-top: 5rem;
 }
 
 .reduced-spacing.footer-top-visible .footer-nav-widgets-wrapper,
@@ -4496,8 +4491,6 @@ ul.footer-social li {
 	align-items: baseline;
 	display: flex;
 	justify-content: space-between;
-	text-align: left;
-	font-family: 'Lato';
 }
 
 #site-footer a {
@@ -5590,7 +5583,7 @@ a.to-the-top > * {
 
 	.footer-top-visible .footer-nav-widgets-wrapper,
 	.footer-top-hidden #site-footer {
-		margin-top: 0rem;
+		margin-top: 8rem;
 	}
 
 	/* FOOTER TOP */
@@ -5656,11 +5649,10 @@ a.to-the-top > * {
 	.footer-credits {
 		display: flex;
 		flex-wrap: wrap;
-		flex-direction:column;
 	}
 
 	.footer-copyright {
-		font-weight: 500;
+		font-weight: 700;
 	}
 
 	.privacy-policy {
@@ -6384,7 +6376,7 @@ a.to-the-top > * {
 
 	.wp-block-separator.is-style-wide {
 		max-width: 120rem;
-		width: 120rem;
+		width: 100%;
 	}
 
 	/* Entry Content ------------------------- */
