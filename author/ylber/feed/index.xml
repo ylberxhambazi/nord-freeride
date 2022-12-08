@@ -10,7 +10,7 @@
 <channel>
 	<title>ylber &#8211; Nord Freeride</title>
 	<atom:link href="http://localhost/landing-page/wordpress/author/ylber/feed/" rel="self" type="application/rss+xml" />
-	<link>https://ylberxhambazi.github.io/nord-freeride</link>
+	<link>https://nordfreeride.com</link>
 	<description></description>
 	<lastBuildDate>Fri, 23 Sep 2022 12:29:18 +0000</lastBuildDate>
 	<language>en-US</language>
@@ -21,21 +21,21 @@
 	<generator>https://wordpress.org/?v=6.1.1</generator>
 
 <image>
-	<url>https://ylberxhambazi.github.io/nord-freeride/wp-content/uploads/2022/10/Nord-Freeride-1.png</url>
+	<url>https://nordfreeride.com/wp-content/uploads/2022/10/Nord-Freeride-1.png</url>
 	<title>ylber &#8211; Nord Freeride</title>
-	<link>https://ylberxhambazi.github.io/nord-freeride</link>
+	<link>https://nordfreeride.com</link>
 	<width>32</width>
 	<height>32</height>
 </image> 
 	<item>
 		<title>Hello world!</title>
-		<link>https://ylberxhambazi.github.io/nord-freeride/hello-world/</link>
-					<comments>https://ylberxhambazi.github.io/nord-freeride/hello-world/#comments</comments>
+		<link>https://nordfreeride.com/hello-world/</link>
+					<comments>https://nordfreeride.com/hello-world/#comments</comments>
 		
 		<dc:creator><![CDATA[ylber]]></dc:creator>
 		<pubDate>Fri, 23 Sep 2022 12:29:18 +0000</pubDate>
 				<category><![CDATA[Uncategorized]]></category>
-		<guid isPermaLink="false">https://ylberxhambazi.github.io/nord-freeride/?p=1</guid>
+		<guid isPermaLink="false">https://nordfreeride.com/?p=1</guid>
 
 					<description><![CDATA[Welcome to WordPress. This is your first post. Edit or delete it, then start writing!]]></description>
 										<content:encoded><![CDATA[
@@ -46,7 +46,7 @@
 <!--/themify_builder_content-->
 ]]></content:encoded>
 					
-					<wfw:commentRss>https://ylberxhambazi.github.io/nord-freeride/hello-world/feed/</wfw:commentRss>
+					<wfw:commentRss>https://nordfreeride.com/hello-world/feed/</wfw:commentRss>
 			<slash:comments>1</slash:comments>
 		
 		

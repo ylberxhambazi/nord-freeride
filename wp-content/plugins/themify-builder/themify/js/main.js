@@ -1,15 +1,36 @@
 ;
 var Themify;
-((win, doc, und, $)=>{
+((win, doc, und, $,vars)=>{
     'use strict';
+    const OnOf=function(on,el,ev,f,p){
+        ev=typeof ev==='string'?ev.split(' '):ev;
+        for(let i=ev.length-1;i>-1;--i){
+            on===true?el.addEventListener(ev[i],f,p):el.removeEventListener(ev[i],f,p);
+        }
+        return el;
+    };
+    Node.prototype.tfClass=function(sel){
+        return this.getElementsByClassName(sel);
+    };
+    Node.prototype.tfTag=function(sel){
+        return this.getElementsByTagName(sel);
+    };
+    Node.prototype.tfId=function(id){
+        return this.getElementById(id);
+    };
+    EventTarget.prototype.tfOn=function(ev,f,p){
+        return OnOf(true,this,ev,f,p);
+    };
+    EventTarget.prototype.tfOff=function(ev,f,p){
+        return OnOf(null,this,ev,f,p);
+    };       
     Themify = {
-        cssLazy: {},
-        jsLazy: {},
-        jsCallbacks: {},
-        cssCallbacks: {},
-        fontsQueue: {},
+        events:new Map(),
+        cssLazy:new Map(),
+        jsLazy:new Map(),
+        fontsQueue:new Set(),
+        v:null,
         is_min: false,
-        events: {},
         body: null,
         is_builder_active: false,
         is_builder_loaded: false,
@@ -21,88 +42,98 @@ var Themify;
         lazyDisable: false,
         lazyScrolling: null,
         url: null,
-        js_modules: null,
-        css_modules: null,
-        jsUrl: '',
+        urlHost:null,
+        builder_url:null,
         cssUrl:'',
         observer: null,
-        triggerEvent(target, type, params) {
+        triggerEvent(el, type, params,isNotCustom) {
             let ev;
-            if (type === 'click' || type === 'submit' || type === 'input' || type==='resize' || (type === 'change' && !params) || type.indexOf('pointer') === 0 || type.indexOf('touch') === 0 || type.indexOf('mouse') === 0) {
+            if (isNotCustom===true || type === 'click' || type === 'submit' || type === 'input' || type==='resize' || (type === 'change' && !params) || type.indexOf('pointer') === 0 || type.indexOf('touch') === 0 || type.indexOf('mouse') === 0) {
                 if (!params) {
                     params = {};
                 }
-                if (params['bubbles'] === und) {
-                    params['bubbles'] = true;
+                if (params.bubbles === und) {
+                    params.bubbles = true;
                 }
-                if (params['cancelable'] === und) {
-                    params['cancelable'] = true;
+                if (params.cancelable === und) {
+                    params.cancelable = true;
                 }
-                ev = new Event(type, params);
+                ev = ((type==='click' && win.PointerEvent) || type.indexOf('pointer') === 0)?new PointerEvent(type, params):(type==='click' || type.indexOf('mouse') === 0?new MouseEvent(type, params):new Event(type, params));
+				Object.defineProperty(ev, 'target', {value: params.target || el, enumerable: true});
             } else {
-                try {
-                    ev = new win.CustomEvent(type, {detail: params});
-                } catch (e) {
-                    ev = win.CustomEvent(type, {detail: params});
+                ev = new win.CustomEvent(type, {detail: params});
+            }
+            el.dispatchEvent(ev);
+            return this;
+        },
+        on(ev, f, once,check) {
+            if(check===true){
+                f();
+                if(once===true){
+                    return this;
                 }
             }
-            target.dispatchEvent(ev);
-        },
-        on(ev, func, once) {
             ev = ev.split(' ');
             const len = ev.length;
-            for (let i = 0; i < len; ++i) {
-                if (this.events[ev[i]] === und) {
-                    this.events[ev[i]] = [];
-                }
-                let item = {'f': func};
-                if (once === true) {
-                    item['o'] = true;
-                }
-                this.events[ev[i]].push(item);
+            for (let i = len-1; i>-1;--i) {
+                let events=this.events.get(ev[i]) || new Map();
+                events.set(f,!!once);
+                this.events.set(ev[i],events);
             }
             return this;
         },
-        off(ev, func) {
-            if (this.events[ev]) {
-                if (!func) {
-                    delete this.events[ev];
-                } else {
-                    const events = this.events[ev];
-                    for (let i = events.length - 1; i > -1; --i) {
-                        if (events[i]['f'] === func) {
-                            this.events[ev].splice(i, 1);
-                        }
+        off(ev, f) {
+            const items=this.events.get(ev);
+            if(items!==und){
+                if(f){
+                    items.delete(f);
+                    if(items.size===0){
+                        this.events.delete(ev);
                     }
+                }
+                else{
+                    this.events.delete(ev);
                 }
             }
             return this;
         },
         trigger(ev, args) {
-            if (this.events[ev]) {
-                const events = this.events[ev].reverse();
-                if (!Array.isArray(args)) {
-                    args = [args];
-                }
-                for (let i = events.length - 1; i > -1; --i) {
-                    if (events[i] !== und) {
-                        events[i]['f'].apply(null, args);
-                        if (events[i] !== und && events[i]['o'] === true) {
-                            this.events[ev].splice(i, 1);
-                            if (Object.keys(this.events[ev]).length === 0) {
-                                delete this.events[ev];
-                                break;
-                            }
+            const items = this.events.get(ev),
+                proms=[];
+                if (items !== und) {
+                    if(args!==und){
+                        if(!Array.isArray(args)){
+                            args=[args];
                         }
                     }
+                    for(let [f,once] of items){
+                        try{
+                            let pr=f.apply(null, args);
+                            if(pr!==und && pr instanceof Promise){
+                                proms.push(pr);
+                            }
+                        }
+                        catch(e){
+                            console.error(e);
+                        }
+                        if(once===true){
+                            items.delete(f);
+                        }
+                    }
+                    if(items.size===0){
+                        this.events.delete(ev);
+                    }
                 }
-            }
-            return this;
+                if(proms.length===0 && args!==und){
+                    proms.push(Promise.resolve(args));
+                }
+                return Promise.all(proms);
         },
-        requestIdleCallback(callback, timeout) {
+        requestIdleCallback(callback, timeout,timer2) {
             if (win.requestIdleCallback) {
                 win.requestIdleCallback(callback, {timeout: timeout});
             } else {
+                timeout=timer2>0?timer2:(timeout<0?2500:timeout);
                 setTimeout(callback, timeout);
             }
         },        
@@ -152,43 +183,36 @@ var Themify;
                 }
             });
         },
-        imagesLoad(items, callback) {
-            if (items !== null && callback!==und) {
-                if (items instanceof jQuery) {
-                    items = items.get();
-                } 
-                else if (items.length === und) {
-                    items = [items];
-                }
-                const prms=[];
-                for(let i=items.length-1;i>-1;--i){
-                    let images=items[i].tagName==='IMG'?[items[i]]:items[i].getElementsByTagName('img');
-                    for(let j=images.legnth-1;j>-1;--j){
-                        if(!images[j].complete){
-                            let elem=images[j];
-                            prms.push(new Promise((resolve, reject) => {
-                                elem.onload = resolve;
-                                elem.onerror = reject;
-                                elem=null;
-                            }));
+        imagesLoad(items) {
+            return new Promise(resolve=>{
+                if (items !== null) {
+                    if (items.length === und) {
+                        items = [items];
+                    }
+                    const prms=[];
+                    for(let i=items.length-1;i>-1;--i){
+                        let images=items[i].tagName==='IMG'?[items[i]]:items[i].tfTag('img');
+                        for(let j=images.legnth-1;j>-1;--j){
+                            if(!images[j].complete){
+                                let elem=images[j];
+                                prms.push(new Promise((resolve, reject) => {
+                                    elem.onload = resolve;
+                                    elem.onerror = reject;
+                                    elem=null;
+                                }));
+                            }
                         }
                     }
-                }
-                if(Promise.allSettled){
-                    Promise.allSettled(prms).then(()=>{
-                        callback(items[0]);
+                    Promise.all(prms).finally(()=>{
+                        resolve(items[0]); 
                     });
                 }
                 else{
-                    Promise.all(prms).then(()=>{//the more correct allSettled instead of all,but safari doesn't support it
-                        callback(items[0]);
-                    });
+                    resolve();
                 }
-                
-            }
-            return this;
+            });
         },
-        UpdateQueryString(d,a,b){
+        updateQueryString(d,a,b){
             b||(b=win.location.href);const e=new URL(b,win.location),f=e.searchParams;null===a?f.delete(d):f.set(d,a);let g=f.toString();return''!==g&&(g='?'+g),b.split('?')[0]+g+e.hash;
         },
         selectWithParent(selector, el) {
@@ -199,12 +223,12 @@ var Themify;
                 el = el[0];
             }
             if (el) {
-                items = isCl === false ? el.querySelectorAll(selector) : (isTag === true ? el.getElementsByTagName(selector) : el.getElementsByClassName(selector));
+                items = isCl === false ? el.querySelectorAll(selector) : (isTag === true ? el.tfTag(selector) : el.tfClass(selector));
                 if ((isCl === true && el.classList.contains(selector)) || (isCl === false && el.matches(selector)) || (isTag === true && el.tagName.toLowerCase() === selector)) {
                     items = this.convert(items, el);
                 }
             } else {
-                items = isCl === false ? doc.querySelectorAll(selector) : (isTag === true ? doc.getElementsByTagName(selector) : doc.getElementsByClassName(selector));
+                items = isCl === false ? doc.querySelectorAll(selector) : (isTag === true ? doc.tfTag(selector) : doc.tfClass(selector));
             }
             return items;
         },
@@ -219,297 +243,205 @@ var Themify;
             }
             return arr;
         },
-        Init() {
+        init() {
             this.is_builder_active = doc.body.classList.contains('themify_builder_active');
             this.body = $('body');
             const windowLoad = ()=>{
                         this.w = win.innerWidth;
                         this.h = win.innerHeight;
-                        this.isRTL = this.body[0].classList.contains('rtl');
+                        this.isRTL = doc.body.classList.contains('rtl');
                         this.isTouch = !!(('ontouchstart' in win) || navigator.msMaxTouchPoints > 0);
-                        this.lazyDisable = this.is_builder_active === true || this.body[0].classList.contains('tf_lazy_disable');
+                        this.lazyDisable = this.is_builder_active === true || doc.body.classList.contains('tf_lazy_disable');
+                        this.click=this.isTouch?'pointerdown':'click';
                         if (this.isTouch) {
-                            const ori = typeof win.screen !== 'undefined' && typeof win.screen.orientation !== 'undefined' ? win.screen.orientation.angle : win.orientation,
+                            const ori = screen.orientation !== und &&  screen.orientation.angle!==und? screen.orientation.angle : win.orientation,
                                     w = ori === 90 || ori === -90 ? this.h : this.w;
                             if (w < 769) {
                                 this.device = w < 681 ? 'mobile' : 'tablet';
                             }
                         }
-                        const _loaded = (c)=> {
-                                    let cl = ' page-loaded';
-                                    if (c) {
-                                        cl += ' ' + c;
-                                    }
-                                    const body = this.body[0];
-                                    if (typeof woocommerce_params !== 'undefined') {
-                                        body.classList.remove('woocommerce-no-js');
-                                        cl += ' woocommerce-js';
-                                    }
-                                    body.className += cl;
-                                };
-                        if (typeof themify_vars === 'undefined') {
-                            const vars = doc.getElementById('tf_vars'),
-                                    script = doc.createElement('script');
-                            script.type = 'text/javascript';
-                            script.textContent = vars.textContent;
-                            vars.parentNode.replaceChild(script, vars);
-                        }
-                        this.is_min = themify_vars.is_min ? true : false;
-                        this.url = themify_vars.url;
-                        if(!themify_vars.cdn){
-                            this.jsUrl = this.url + '/js/modules/';
-                            this.cssUrl = this.url + '/css/modules/';
-                        }
-                        
-                        this.js_modules = themify_vars.js_modules;
-                        this.css_modules = themify_vars.css_modules;
-                        if (!win['IntersectionObserver']) {
-                            this.LoadAsync(this.url + '/js/modules/fallback.js');
-                        }
-                        if (themify_vars['done'] !== und) {
-                            this.cssLazy = themify_vars['done'];
-                            delete themify_vars['done'];
-                        }
-                        this.mobileMenu();
-                        this.trigger('tf_init');
-                        win.loaded = true;
-                        if (themify_vars && !themify_vars['is_admin']) {
-                            if (false && themify_vars['sw'] && win.self === win.top && ('serviceWorker' in navigator)) {// temprorary disabling    
-                                const swargs=themify_vars['sw'],
-                                uniqueID=this.hash(swargs.site_url);
-                                if(!swargs.unbind){
-                                        let swUrl=this.url+'/sw/sw',
-                                                includesURL=encodeURIComponent(themify_vars.includesURL.replace(/\/$/, '').replace(swargs.site_url.replace(/\/$/, '')+'/','6789'));//6789 random name to replace it in sw.js
-                                        if(this.is_min===true){
-                                                swUrl+='.min';
-                                        }
-                                        swUrl+='.js?ver='+themify_vars.version+'&tv='+themify_vars['theme_v']+'&wp='+themify_vars.wp+'&uid='+uniqueID+'&i='+includesURL+'&jq='+$.fn.jquery+'&pl='+swargs.plugins_url;
-                                        if(swargs.wp_n_min){
-                                                swUrl+='&wpm=1';
-                                        }
-                                        if(swargs.is_multi){
-                                                swUrl+='&m=1';
-                                        }
-                                        if(themify_vars.wc_version){
-                                                swUrl+='&wc='+themify_vars.wc_version;
-                                        }
-
-                                        navigator.serviceWorker.register(swUrl,{scope:'/'});
+                        requestAnimationFrame(()=>{
+                            this.cssUrl = this.url + 'css/modules/';
+                            this.builder_url=vars.theme_v?(this.url+'themify-builder/'):this.url.substring(0,this.url.slice(0, -1).lastIndexOf('/') + 1);
+                            if (vars.done !== und) {
+                                this.cssLazy = new Map(Object.entries(vars.done));
+                            }
+                            this.requestIdleCallback(()=> {this.mobileMenu();},40);
+                            this.trigger('tf_init');
+                            win.loaded = true;
+                            if (vars && !vars.is_admin) {
+                                if (vars.theme_js) {
+                                    this.loadJs(vars.theme_js, null, vars.theme_v);
                                 }
-                                else{
-                                        navigator.serviceWorker.getRegistrations().then((registrations)=> {
-                                                for(let i=registrations.length-1;i>-1;--i) {
-                                                        if( registrations[i].active.scriptURL.indexOf(uniqueID)!==-1){
-                                                          registrations[i].unregister();
-                                                        }
-                                                } 
-                                        });
-                                }  
-                            }
-                            if (themify_vars['theme_js']) {
-                                this.LoadAsync(themify_vars.theme_js, null, themify_vars.theme_v);
-                                delete themify_vars['theme_js'];
-                            }
-                            if (this.is_builder_active === false) {
-                                if (win['tbLocalScript'] && doc.getElementsByClassName('module_row')[0]) {
-									let burl=win['tbLocalScript'].builder_url;
-									const builder=doc.querySelector('link[href*="themify.builder.script"]');
-									if(builder){
-										burl=builder.href;
-									}
-									else{
-										burl+=win['tbLocalScript'].js_modules.b.u;
-									}
-                                    this.LoadAsync(burl, ()=> {
-                                        this.is_builder_loaded = true;
-                                        _loaded('has-builder');
+                                if (this.is_builder_active === false) {
+                                    const prms=win.tbLocalScript && doc.tfClass('module_row')[0]?this.loadJs(this.builder_url+'js/themify.builder.script'):Promise.resolve();
+                                    prms.then(()=>{
                                         this.lazyLoading();
-                                    }, win['tbLocalScript'].js_modules.b.v, null, ()=> {
-                                        return typeof ThemifyBuilderModuleJs !== 'undefined';
                                     });
-                                } else {
-                                    _loaded();
-                                    this.lazyLoading();
+                                    this.requestIdleCallback(()=> {this.commonJs();},-1);
+                                    this.requestIdleCallback(()=> {this.tooltips();},110);
                                 }
-                                this.loadFonts();
-                                this.stickyBuy();
-								this.tooltips();
-                            } else {
-                                _loaded();
-                            }
-                            requestAnimationFrame(()=> {
-                                this.initWC();
+                                this.requestIdleCallback(()=> {this.wc();},50);
+                                this.requestIdleCallback(()=> {this.touchDropDown();},60);
                                 setTimeout(()=>{
-                                    this.InitGallery();
+                                    this.requestIdleCallback(()=> {this.gallery();},100);
                                     this.googleAnalytics();
                                 }, 800);
-                            });
-                        }
-                        this.initResizeHelper();
-                        if (this.is_builder_active === false) {
-                            this.touchDropDown();
-                        }
-                    };
+                            }
+                            this.requestIdleCallback(()=> {this.resizer();},-1,2000);
+                        });
+                    };  
+            
+            const url=new URL(doc.currentScript.src,win.location.origin);
+            this.is_min = url.href.indexOf('.min.js')!==-1;
+            this.v=url.searchParams.get('ver');
+            this.urlHost=url.hostname;
+            this.url = url.href.split('js/main.')[0].trim();
+            
             if (doc.readyState === 'complete' || this.is_builder_active === true) {
-                windowLoad();
+                this.requestIdleCallback(windowLoad,50);
             } else {
-                win.addEventListener('load', windowLoad, {once: true, passive: true});
+                win.tfOn('pageshow', windowLoad, {once: true, passive: true});
             }
         },
-        initComponents(el, isLazy) {
-            if (isLazy === true && el[0].tagName === 'IMG') {
+        async initComponents(el, isLazy) {
+            if (isLazy === true && el.tagName === 'IMG') {
                 return;
             }
             let items;
-            const loading={'VIDEO':'video','AUDIO':'audio','auto_tiles':'autoTiles','tf_carousel':'InitCarousel','themify_map':'InitMap','[data-lax]':'lax','masonry':'isoTop','tf_search_form':'ajaxSearch'};
+            const loading={VIDEO:'video',AUDIO:'audio',auto_tiles:'autoTiles',tf_carousel:'carousel',themify_map:'map','[data-lax]':'lax',masonry:'isotop',tf_search_form:'ajaxSearch',tf_sticky_form_wrap:'stickyBuy'},
+                    prms=[];
             for(let cl in loading){
                 items=null;
                 if (isLazy === true) {
-                    if(cl==='[data-lax]'){
-                        if(el[0].hasAttribute('data-lax')){
-                            items = [el[0]];
+                    if(cl==='tf_sticky_form_wrap'){
+                        if(el.id===cl){
+                            items = [el];
                         }
                     }
-                    else if (el[0].tagName === cl || el[0].classList.contains(cl) || (cl==='tf_search_form' && el[0].classList.contains('tf_search_icon'))) {
-                        items = [el[0]];
+                    else if(cl==='[data-lax]'){
+                        if(el.hasAttribute('data-lax')){
+                            items = [el];
+                        }
+                    }
+                    else if (el.tagName === cl || el.classList.contains(cl) || (cl==='tf_search_form' && el.classList.contains('tf_search_icon'))) {
+                        items = [el];
                     }
                 } else {
                     items = this.selectWithParent(cl.toLowerCase(), el);
                 }
                 if (items !== null && items.length > 0) {
-                    this[loading[cl]](items);
+                    prms.push(this[loading[cl]](items));
                 }
             }
             items=null;
             if (isLazy === true) {
-                if (el[0].classList.contains('wp-embedded-content')) {
-                    items = [el[0]];
+                if (el.classList.contains('wp-embedded-content')) {
+                    items = [el];
                 } else {
-                    this.loadWPEmbed(el[0].getElementsByClassName('wp-embedded-content'));
+                    prms.push(this.wpEmbed(el.tfClass('wp-embedded-content')));
                 }
             } else {
                 items = this.selectWithParent('wp-embedded-content', el);
             }
             if (items !== null && items.length > 0) {
-                this.loadWPEmbed(items);
+                prms.push(this.wpEmbed(items));
             }
             items=null;
-            this.checkLargeImages(el);
+            this.largeImages(el);
+            return Promise.all(prms);
         },
-        component(key,f,...args){
-            if (this.jsLazy['tf_'+key] === und) {
-                this.LoadAsync(this.jsUrl+this.js_modules[key].u, ()=> {
-                    this.jsLazy['tf_'+key] = true;
-                    this.trigger('tf_'+f+'_init', args);
-                }, this.js_modules[key].v, null, ()=> {
-                    return !!this.jsLazy['tf_'+f];
-                });
-            } else {
-                this.trigger('tf_'+f+'_init', args);
-            }
-        },
-        FixedHeader(options) {
+        fixedHeader(options) {
             if (!this.is_builder_active) {
-                this.component('fxh','fixed_header',options);
+                return new Promise((resolve,reject)=>{
+                    this.loadJs('fixedheader').then(()=>{
+                        this.requestIdleCallback(()=> {
+                            this.trigger('tf_fixed_header_init', options);
+                            resolve();
+                        },50);
+                    })
+                    .catch(reject);
+                });
             }
         },
-        lax(items, is_live) {
-            if ((is_live !== true && this.is_builder_active) || items.length === 0) {
-                return;
+        async lax(items, is_live) {
+            if ((is_live === true || !this.is_builder_active) && items.length>0) {
+                await this.loadJs('lax');
+                this.trigger('tf_lax_init', [items]);
             }
-            this.component('lax','lax',items);
         },
-        video(items) {
-            if (!items || items.length === 0) {
-                return false;
-            }
-            if (this.jsLazy['tf_video'] === und) {
-                const check = ()=> {
-                            if (this.cssLazy['tf_video'] === true && this.jsLazy['tf_video'] === true) {
-                                this.trigger('tf_video_init', [items]);
-                            }
-                        };
-                this.LoadCss(this.cssUrl+this.css_modules.video.u, this.css_modules.video.v, null, null, ()=> {
-                    this.cssLazy['tf_video'] = true;
-                    check();
-                });
-                this.LoadAsync(this.jsUrl+this.js_modules.video.u, ()=> {
-                    this.jsLazy['tf_video'] = true;
-                    check();
-                }, this.js_modules.video.v, null, ()=> {
-                    return !!this.jsLazy['tf_video'];
-                });
-            } else {
+        async video(items) {
+            if (items && items.length>0) {
+                for(let i=items.length-1;i>-1;--i){
+                    let src=items[i].dataset.poster;
+                    if(src){
+                        let img=new Image();
+                        img.src=src;
+                        img.decode()
+                        .catch(()=>{})
+                        .finally(()=>{
+                            items[i].poster=src;
+                        });
+                        items[i].removeAttribute('data-poster');
+                    }
+                }
+                await Promise.all([this.loadCss('video','tf_video'),this.loadJs('video-player')]);
                 this.trigger('tf_video_init', [items]);
             }
         },
-        audio(items, options) {
-            if (!items || items.length === 0) {
-                return false;
-            }
-            if (this.jsLazy['tf_audio'] === und) {
-                const check = ()=> {
-                            if (this.cssLazy['tf_audio'] === true && this.jsLazy['tf_audio'] === true) {
-                                this.trigger('tf_audio_init', [items, options]);
-                            }
-                        };
-                this.LoadCss(this.cssUrl+this.css_modules.audio.u, this.css_modules.audio.v, null, null, ()=>{
-                    this.cssLazy['tf_audio'] = true;
-                    check();
-                });
-                this.LoadAsync(this.jsUrl+this.js_modules.audio.u, ()=> {
-                    this.jsLazy['tf_audio'] = true;
-                    check();
-                }, this.js_modules.audio.v, null, ()=> {
-                    return !!this.jsLazy['tf_audio'];
-                });
-            } else {
+        async audio(items, options) {
+            if (items && items.length>0) {
+                await Promise.all([this.loadCss('audio','tf_audio'),this.loadJs('audio-player')]);
                 this.trigger('tf_audio_init', [items, options]);
             }
         },
-        sideMenu(items, options, callback) {
-            if (!items || items.length === 0) {
-                return;
-            }
-            this.component('side','sidemenu',items, options, callback);
-        },
-        edgeMenu(menu) {
-            if(doc.getElementsByClassName('sub-menu')[0]){
-                this.component('edge','edge',menu);
+        async sideMenu(items, options) {
+            if (items && (items.length>0 || items.length===und)) {
+                await this.loadJs('themify.sidemenu');
+                this.trigger('tf_sidemenu_init', [items, options]);
             }
         },
-        sharer(type, url, title) {
-            this.component('sharer','sharer',type, url, title);
+        async edgeMenu(menu) {
+            if(doc.tfClass('sub-menu')[0]!==und){
+                await this.loadJs('edge.Menu');
+                this.trigger('tf_edge_init', menu);
+            }
         },
-        autoTiles(items, callback) {
-            this.component('at','autotiles',items, callback);
+        async sharer(type, url, title) {
+            await this.loadJs('sharer');
+            this.trigger('tf_sharer_init', [type, url, title]);
         },
-        InitCarousel(items, options) {
+        async autoTiles(items) {
+            await this.loadJs('autoTiles');
+            this.trigger('tf_autotiles_init', [items]);
+        },
+        async map(items) {
+            await this.loadJs('map');
+            this.trigger('tf_map_init', [items]);
+        },
+        async carousel(items, options) {
             if (items) {
-             this.component('tc','carousel',items, options);
+                await this.loadJs('themify.carousel');
+                this.trigger('tf_carousel_init', [items, options]);
             }
         },
-        InitMap(items) {
-            this.component('map','map',items);
-        },
-        infinity(container, options) {
-            if (!container || container.length === 0 || this.is_builder_active === true || (!options['button'] && options.hasOwnProperty('button')) || (options['path'] && typeof options['path'] === 'string' && doc.querySelector(options['path']) === null)) {
-                return;
-            }
-            // there are no elements to apply the Infinite effect on
-            if (options['append'] && !$(options['append']).length) {
-                // show the Load More button, just in case.
-                if (options['button']) {
-                    options['button'].style.display = 'block';
+        async infinity(container, options) {
+                if (!container || container.length === 0 || this.is_builder_active === true || (!options.button && options.hasOwnProperty('button')) || (options['path'] && typeof options['path'] === 'string' && doc.querySelector(options['path']) === null)) {
+                    return;
                 }
-                return;
-            }
-            this.component('inf','infinite',container, options);
+                // there are no elements to apply the Infinite effect on
+                if (options.append && doc.querySelector(options.append)===null) {
+                    // show the Load More button, just in case.
+                    if (options.button) {
+                        options.button.style.display = 'block';
+                    }
+                    return;
+                }
+                await this.loadJs('infinite');
+                this.trigger('tf_infinite_init', [container, options]);
         },
-        isoTop(items, options) {
-            if (items instanceof jQuery) {
-                items = items.get();
-            } else if (items.length === und) {
+        async isotop(items, options) {
+            if (items.length === und) {
                 items = [items];
             }
             const res = [];
@@ -520,471 +452,378 @@ var Themify;
                 }
             }
             if (res.length > 0) {
-                if (this.jsLazy['tf_isotop'] === und || 'undefined' === typeof $.fn.packery) {
-                    const check = ()=>{
-                            if (this.jsLazy['tf_isotop'] === true && 'undefined' !== typeof $.fn.packery) {
-                                this.trigger('tf_isotop_init', [res, options]);
-                            }
-                        };
-                    if(typeof $.fn.packery === 'undefined'){
-                        this.LoadAsync(this.jsUrl + this.js_modules.is.u, check, this.js_modules.is.v, null, ()=>{
-                                return typeof $.fn.packery !== 'undefined';
-                        });
-                    }
-                    if(this.jsLazy['tf_isotop']===und){
-                        this.LoadAsync(this.jsUrl+this.js_modules.iso.u, ()=>{
-                            this.jsLazy['tf_isotop'] = true;
-                            check();
-                        }, this.js_modules.iso.v, null, ()=> {
-                            return !!this.jsLazy['tf_isotop'];
-                        });
+                await Promise.all([
+                    this.loadJs('jquery.isotope.min',typeof $.fn.packery !== 'undefined','3.0.6'), 
+                    this.loadJs('isotop')
+                ]);
+                this.trigger('tf_isotop_init', [res, options]);
+            }
+        },
+        fonts(icons) {
+            return new Promise((resolve,reject)=>{
+                if (icons) {
+                    if (typeof icons === 'string') {
+                        icons = [icons];
+                    } else if (!Array.isArray(icons)) {
+                        if (icons instanceof jQuery) {
+                            icons = icons[0];
+                        }
+                        icons = this.selectWithParent('tf_fa', icons);
                     }
                 } else {
-                    this.trigger('tf_isotop_init', [res, options]);
+                    icons = doc.tfClass('tf_fa');
                 }
-            }
-        },
-        fontAwesome(icons) {
-            if (icons) {
-                if (typeof icons === 'string') {
-                    icons = [icons];
-                } else if (!Array.isArray(icons)) {
-                    if (icons instanceof jQuery) {
-                        icons = icons[0];
+                const Loaded = new Set(),
+                        needToLoad = [],
+                        parents = [],
+                        svg = doc.tfId('tf_svg').firstChild,
+                        loadedIcons = svg.tfTag('symbol');
+                for (let i = loadedIcons.length - 1; i > -1; --i) {
+                    Loaded.add(loadedIcons[i].id);
+                    Loaded.add(loadedIcons[i].id.replace('tf-',''));
+                }
+                for (let i = icons.length - 1; i > -1; --i) {
+                    if(icons[i].tagName!==und && icons[i].tagName!=='svg'){
+                        continue;
                     }
-                    icons = this.selectWithParent('tf_fa', icons);
-                }
-            } else {
-                icons = doc.getElementsByClassName('tf_fa');
-            }
-            const Loaded = {},
-                    needToLoad = [],
-                    parents = [],
-                    svg = doc.getElementById('tf_svg').firstChild,
-                    loadedIcons = svg.getElementsByTagName('symbol');
-            for (let i = loadedIcons.length - 1; i > -1; --i) {
-                Loaded[loadedIcons[i].id] = true;
-            }
-            for (let i = icons.length - 1; i > -1; --i) {
-                let id = icons[i].classList ? icons[i].classList[1] : icons[i];
-                if (id && !Loaded[id]) {
-                    if (this.fontsQueue[id] === und) {
-                        this.fontsQueue[id] = true;
-                        let tmp = id.replace('tf-', ''),
-                                tmp2 = tmp.split('-');
-                        if (tmp2[0] === 'fas' || tmp2[0] === 'far' || tmp2[0] === 'fab') {
-                            let pre = tmp2[0];
-                            tmp2.shift();
-                            tmp = pre + ' ' + tmp2.join('-');
+                    let id = icons[i].classList ? icons[i].classList[1] : icons[i];
+                    if (id && !Loaded.has(id)) {
+                        if (!this.fontsQueue.has(id)) {
+                            this.fontsQueue.add(id);
+                            let tmp = id.replace('tf-', ''),
+                                    tmp2 = tmp.split('-');
+                            if (tmp2[0] === 'fas' || tmp2[0] === 'far' || tmp2[0] === 'fab') {
+                                let pre = tmp2[0];
+                                tmp2.shift();
+                                tmp = pre + ' ' + tmp2.join('-');
+                            }
+                            needToLoad.push(tmp);
                         }
-                        needToLoad.push(tmp);
-                    }
-                    if (icons[i].classList) {
-                        let p = icons[i].parentNode;
-                        p.classList.add('tf_lazy');
-                        parents.push(p);
+                        if (icons[i].classList) {
+                            let p = icons[i].parentNode;
+                            p.classList.add('tf_lazy');
+                            parents.push(p);
+                        }
                     }
                 }
-            }
-            if (needToLoad.length > 0) {
-                const time = this.is_builder_active ? 5 : 2000;
-                setTimeout( ()=>{
-                    const request = new Headers({
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }),
-                            data = new FormData();
-                    data.append('action', 'tf_load_icons');
-                    data.append('icons', JSON.stringify(needToLoad));
-
-                    this.fetch(data,null,{credentials:'omit'}).then(res => {
-                                const fr = doc.createDocumentFragment(),
-                                        ns = 'http://www.w3.org/2000/svg';
-                                let st = [];
-                                for (let i in res) {
-                                    let s = doc.createElementNS(ns, 'symbol'),
-                                            p = doc.createElementNS(ns, 'path'),
-                                            k = 'tf-' + i.replace(' ', '-'),
-                                            viewBox = '0 0 ';
-                                    viewBox += res[i].vw ? res[i].vw : '32';
-                                    viewBox += ' 32';
-                                    s.id = k;
-                                    s.setAttributeNS(null, 'viewBox', viewBox);
-                                    p.setAttributeNS(null, 'd', res[i]['p']);
-                                    s.appendChild(p);
-                                    fr.appendChild(s);
-                                    if (res[i].w) {
-                                        st.push('.tf_fa.' + k + '{width:' + res[i].w + 'em}');
+                if (needToLoad.length > 0) {
+                    const time = this.is_builder_active ? 5 : 2000;
+                    setTimeout( ()=>{
+                        this.fetch({action: 'tf_load_icons',icons: JSON.stringify(needToLoad)},null,{credentials:'omit'}).then(res => {
+                                    const fr = doc.createDocumentFragment(),
+                                            ns = 'http://www.w3.org/2000/svg',
+                                            st = [];
+                                    for (let i in res) {
+                                        let s = doc.createElementNS(ns, 'symbol'),
+                                                p = doc.createElementNS(ns, 'path'),
+                                                k = 'tf-' + i.replace(' ', '-'),
+                                                viewBox = '0 0 ';
+                                        viewBox += res[i].vw!==und && res[i].vw!==''?res[i].vw:'32';
+                                        viewBox +=' ';
+                                        viewBox +=res[i].vh!==und && res[i].vh!==''?res[i].vh:'32';
+                                        s.id = k;
+                                        s.setAttributeNS(null, 'viewBox', viewBox);
+                                        p.setAttributeNS(null, 'd', res[i].p);
+                                        s.appendChild(p);
+                                        fr.appendChild(s);
+                                        if (res[i].w) {
+                                            st.push('.tf_fa.' + k + '{width:' + res[i].w + 'em}');
+                                        }
                                     }
-                                }
-                                svg.appendChild(fr);
-                                if (st.length > 0) {
-                                    let css = doc.getElementById('tf_fonts_style');
-                                    if (css === null) {
-                                        css = doc.createElement('style');
-                                        css.id = 'tf_fonts_style';
+                                    svg.appendChild(fr);
+                                    if (st.length > 0) {
+                                        let css = doc.tfId('tf_fonts_style');
+                                        if (css === null) {
+                                            css = doc.createElement('style');
+                                            css.id = 'tf_fonts_style';
+                                            svg.appendChild(css);
+                                        }
+                                        css.textContent += st.join('');
                                     }
-                                    css.textContent += st.join('');
-                                }
-                                this.fontsQueue = {};
-                                for (let i = parents.length - 1; i > -1; --i) {
-                                    if (parents[i]) {
-                                        parents[i].classList.remove('tf_lazy');
+                                    this.fontsQueue.clear();
+                                    for (let i = parents.length - 1; i > -1; --i) {
+                                        if (parents[i]) {
+                                            parents[i].classList.remove('tf_lazy');
+                                        }
                                     }
-                                }
-                            });
-                }, time);
-            }
-            return;
-        },
-        loadFonts() {
-            this.requestIdleCallback(()=> {
-                this.fontAwesome();
-            }, 200);
-            if (themify_vars['commentUrl']) {
-                setTimeout(()=> {
-                    this.loadComments();
-                }, 3000);
-            }
-            if (themify_vars.wp_emoji) {
-                setTimeout(()=> {
-                    this.loadExtra(themify_vars.wp_emoji, null, false, ()=> {
-                        win._wpemojiSettings['DOMReady'] = true;
-                    });
-                    themify_vars.wp_emoji = null;
-                }, 4000);
-            }
-        },
-        loadComments(callback) {
-            if (!win['addComment'] && themify_vars['commentUrl']) {
-                let comments = doc.getElementById('cancel-comment-reply-link');
-                if (comments) {
-                    comments = comments.closest('#comments');
-                    if (comments) {
-                        const self = this,
-                                load = function () {
-                                    this.removeEventListener('focusin', load, {once: true, passive: true});
-                                    this.removeEventListener((self.isTouch ? 'touchstart' : 'mouseenter'), load, {once: true, passive: true});
-                                    self.LoadAsync(themify_vars.commentUrl, callback, themify_vars.wp, null, ()=>{
-                                        return !!win['addComment'];
-                                    });
-                                    themify_vars['commentUrl'] = null;
-                                };
-                        comments.addEventListener('focusin', load, {once: true, passive: true});
-                        comments.addEventListener((this.isTouch ? 'touchstart' : 'mouseenter'), load, {once: true, passive: true});
-                    }
+                                    resolve();
+                                }).catch(reject);
+                    }, time);
                 }
-            }
+                else{
+                    resolve();
+                }
+            });
         },
-        LoadAsync(src, callback, version, extra, test, async) {
-            const id = this.hash(src), // Make script path as ID
-                    exist = !!this.jsLazy[id];
-            if (exist === false) {
-                this.jsLazy[id] = true;
-            }
-            if (exist === true || doc.getElementById(id) !== null) {
-                if (callback) {
-                    if (test) {
-                        if (test() === true) {
-                            this.requestIdleCallback(callback,200);
-                            return this;
+        commonJs() {
+            return new Promise((resolve,reject)=>{
+                if(doc.tfTag('tf-lottie')[0]){
+                    this.loadJs('https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.10.0/lottie_light.min.js',!!win.lottie,false);
+                    this.importJs('lottie');
+                }
+                this.requestIdleCallback(()=> {
+                    this.fonts().then(resolve).catch(reject);
+                }, 200);
+                if (vars.commentUrl) {
+                    this.requestIdleCallback(()=> {
+                        if (!win.addComment && vars.commentUrl && doc.tfId('cancel-comment-reply-link')) {
+                            this.loadJs('comments');
                         }
-                        if (this.jsCallbacks[id] === und) {
-                            this.jsCallbacks[id] = [];
-                        }
-                        this.jsCallbacks[id].push(callback);
-                    } else {
-                        this.requestIdleCallback(callback,200);
-                    }
+                    }, -1,3000);
                 }
-                return this;
-            } else if (test && test() === true) {
-                if (extra) {
-                    this.loadExtra(extra);
+                if (vars.wp_emoji) {
+                    this.requestIdleCallback(()=> {
+                        const emoji = doc.createElement('script');
+                        emoji.text = vars.wp_emoji;
+                        requestAnimationFrame(()=>{
+                             doc.head.appendChild(emoji);
+                        });
+                        win._wpemojiSettings.DOMReady = true;
+                        vars.wp_emoji = null;
+                    }, -1,4000);
                 }
-                if (callback) {
-                    this.requestIdleCallback(callback,200);
-                }
-                return this;
-            }
-            if (this.is_min === true && src.indexOf('.min.js') === -1 && src.indexOf(win.location.hostname) !== -1) {
-                src = src.replace('.js', '.min.js');
-            }
-            if (version !== false && src.indexOf('ver=')===-1) {
-                if(!version){
-                    version = themify_vars.version;
-                }
-                src += '?ver=' + version;
-            }
-            const s = doc.createElement('script'),
-                    self = this;
-            s.setAttribute('id', id);
-            if (async !== false) {
-                async = 'async';
-            }
-            s.setAttribute('async', async);
-            s.addEventListener('load', function () {
-                const key = this.getAttribute('id');
-                self.requestIdleCallback(()=> {
-                    if (callback) {
-                        callback();
-                    }
-                    if (self.jsCallbacks[key]) {
-                        for (let i = 0, len = self.jsCallbacks[key].length; i < len; ++i) {
-                            self.jsCallbacks[key][i]();
-                        }
-                        delete self.jsCallbacks[key];
-                    }
-                },500);
-            }, {passive: true, once: true});
-            s.setAttribute('src', src);
-            doc.head.appendChild(s);
-            if (extra) {
-                this.loadExtra(extra, s);
-            }
-            return this;
+            });
         },
-        loadExtra(data, handler, inHead, callback) {
-            if (data) {
-                if (typeof handler === 'string') {
-                    handler = doc.querySelector('script#' + handler);
-                    if (handler === null) {
+        loadJs(src, test, version, async) {
+            const origSrc=src;
+            let pr=this.jsLazy.get(origSrc);
+            if(pr===und){
+                pr=new Promise((resolve,reject)=>{
+                    if(test===true){
+                        requestAnimationFrame(resolve);
                         return;
                     }
+                    const isLocal=src.indexOf(this.urlHost) !== -1;
+                    if(isLocal===true || (src.indexOf('http')===-1 && src.indexOf('//')!==0)){
+                        if(src.indexOf('.js')===-1){
+                            src+='.js';
+                        }
+                        if (version !== false){
+                            if(isLocal===false){
+                                src=this.url+'js/modules/'+src;
+                            }
+                            if (this.is_min === true && src.indexOf('.min.js') === -1) {
+                                src = src.replace('.js', '.min.js');
+                            }
+                            if (src.indexOf('ver=')===-1) {
+                                if(!version){
+                                    version = this.v;
+                                }
+                                src+='?ver=' + version;
+                            }
+                        }   
+                    }
+                    const s = doc.createElement('script');
+                    s.async=async===false?false:true;
+                    s.tfOn('load', e=> {
+                        requestAnimationFrame(resolve);
+                    }, {passive: true, once: true})
+                    .tfOn('error', reject, {passive: true, once: true});
+                    s.src=src;
+                    requestAnimationFrame(()=>{
+                        doc.head.appendChild(s);
+                    });
+                });
+                this.jsLazy.set(origSrc,pr);
+            }
+            return pr;
+        },
+        importJs(src, ver){
+            const isLocal=src.indexOf(this.urlHost) !== -1;
+            if(isLocal===true || (src.indexOf('http')===-1 && src.indexOf('//')!==0)){
+                if(src.indexOf('.js')===-1){
+                    src+='.js';
                 }
-                let str = '';
-                if (handler) {
-                    if (data['before']) {
-                        if (typeof data['before'] !== 'string') {
-                            for (let i in data['before']) {
-                                if (data['before'][i]) {
-                                    str += data['before'][i];
+                if (ver !== false){
+                    if(isLocal===false){
+                        src=this.url+'js/modules/'+src;
+                    }
+                    if (this.is_min === true && src.indexOf('.min.js') === -1) {
+                        src = src.replace('.js', '.min.js');
+                    }
+                    if (src.indexOf('ver=')===-1) {
+                        if(!ver){
+                            ver = this.v;
+                        }
+                        src+='?ver=' + ver;
+                    }
+                }
+            }
+            return import(src);
+        },
+        loadCss(href,id, version, before, media) {
+            if(!id){
+                id = 'tf_'+this.hash(href);
+            }
+            let prms=this.cssLazy.get(id);
+            if (prms===und) {
+                prms=new Promise((resolve,reject)=>{
+                    const d=before?before.getRootNode():doc,
+                        el = d.tfId(id);
+                        if(el!==null && el.media!== 'print'){
+                            resolve();
+                            return;
+                        }
+               
+                const ss = doc.createElement('link'),
+                        self = this,
+                        onload = function () {
+                            if (!media) {
+								media = 'all';
+							}
+                            this.media=media;
+                            const key = this.id,
+                                    checkApply = ()=>{
+                                        const sheets = this.getRootNode().styleSheets;
+                                        let found = false;
+                                        for (let i = sheets.length - 1; i > -1; --i) {
+                                            if (sheets[i].ownerNode!==null && sheets[i].ownerNode.id === key) {
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                        if (found === true) {
+                                            resolve();
+                                        }
+                                        else {
+                                            requestAnimationFrame(()=>{
+                                                checkApply();
+                                            });
+                                        }
+                                    };
+                                requestAnimationFrame(()=>{
+                                    checkApply();
+                                });
+                        },
+                        isLocal=href.indexOf(this.urlHost) !== -1;
+                        if(isLocal===true || (href.indexOf('http')===-1 && href.indexOf('//')!==0)){
+                            if(href.indexOf('.css')===-1){
+                                href+='.css';
+                            }
+                            if(version !== false){
+                                if(isLocal===false){
+                                    href=this.url+'css/modules/'+href;
+                                }
+                                if (this.is_min === true && href.indexOf('.min.css') === -1) {
+                                    href = href.replace('.css', '.min.css');
+                                }
+                                if (href.indexOf('ver=')===-1) {
+                                    if(!version){
+                                        version = this.v;
+                                    }
+                                    href+='?ver=' + version;
                                 }
                             }
+                        }
+                        ss.rel='stylesheet';
+                        ss.media='print';
+                        ss.id=id;
+                        ss.href=href;
+                        ss.setAttribute('fetchpriority', 'low');
+                        if ('isApplicationInstalled' in navigator) {
+                            ss.onloadcssdefined(onload);
                         } else {
-                            str = data['before'];
+                            ss.tfOn('load', onload, {passive: true, once: true});
                         }
-                        if (str !== '') {
-                            const before = doc.createElement('script');
-                            before.type = 'text/javascript';
-                            before.text = str;
-                            handler.parentNode.insertBefore(before, handler);
-                        }
-                    }
-                }
-                if (typeof data !== 'string') {
-                    str = '';
-                    for (let i in data) {
-                        if (i !== 'before' && data[i]) {
-                            str += data[i];
-                        }
-                    }
-                } else {
-                    str = data;
-                }
-                if (str !== '') {
-                    const extra = doc.createElement('script');
-                    extra.type = 'text/javascript';
-                    extra.text = str;
-                    if (inHead === und || inHead === true) {
-                        doc.head.appendChild(extra);
-                    } else {
-                        doc.body.appendChild(extra);
-                    }
-                    if (callback) {
-                        callback();
-                    }
+                        ss.tfOn('error', reject, {passive: true, once: true});
+                        let ref = before;
+                        requestAnimationFrame(()=>{ 
+                            if (!ref || !ref.parentNode) {
+                                const critical_st = doc.tfId('tf_lazy_common');
+                                ref = critical_st ? critical_st.nextSibling : doc.head.firstElementChild;
+                            }
+                            ref.parentNode.insertBefore(ss, (before ? ref : ref.nextSibling));
+                        });
+                    });
+                    this.cssLazy.set(id,prms);
+            }
+            else if(prms===true){
+                prms=Promise.resolve();
+                this.cssLazy.set(id,prms);
+            }
+            else if(before){//maybe it's shadow root,need to recheck
+                const el=before.getRootNode().tfId(id);
+                if(el===null){
+                    this.cssLazy.delete(id);
+                    return this.loadCss(href,id, version, before, media);
                 }
             }
-            return this;
+            return prms;
         },
-        LoadCss(href, version, before, media, callback) {
-            const id = this.hash(href);
-            if (this.cssLazy[id] !== true) {
-                this.cssLazy[id] = true;
-            } else {
-                if (callback) {
-                    const el = doc.getElementById(id);
-                    if (el !== null && el.getAttribute('media') !== 'only_x') {
-                        callback();
-                    } else {
-                        if (this.cssCallbacks[id] === und) {
-                            this.cssCallbacks[id] = [];
-                        }
-                        this.cssCallbacks[id].push(callback);
-                    }
-                }
-                return false;
-            }
-
-            if (!media) {
-                media = 'all';
-            }
-            const ss = doc.createElement('link'),
-                    self = this,
-                    onload = function () {
-                        this.setAttribute('media', media);
-                        const key = this.getAttribute('id'),
-                                checkApply = ()=>{
-                                    const sheets = doc.styleSheets;
-                                    let found = false;
-                                    for (let i = sheets.length - 1; i > -1; --i) {
-                                        if (sheets[i].ownerNode.id === key) {
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (found === true) {
-                                        if (callback) {
-                                            callback();
-                                        }
-                                        if (self.cssCallbacks[key]) {
-                                            for (let i = 0, len = self.cssCallbacks[key].length; i < len; ++i) {
-                                                self.cssCallbacks[key][i]();
-                                            }
-                                            delete self.cssCallbacks[key];
-                                        }
-                                    } else {
-                                        setTimeout(checkApply, 80);
-                                    }
-                                };
-                        if (callback || self.cssCallbacks[key] !== und) {
-                            checkApply();
-                        }
-                    };
-            
-           
-            let  fullHref = href;
-            if (this.is_min === true && href.indexOf('.min.css') === -1 && href.indexOf(win.location.hostname) !== -1) {
-                fullHref = fullHref.replace('.css', '.min.css');
-            }
-            if (fullHref.indexOf('http') === -1) {
-                // convert protocol-relative url to absolute url
-                const placeholder = doc.createElement('a');
-                placeholder.href = fullHref;
-                fullHref = placeholder.href;
-            }
-            if (version !== false && fullHref.indexOf('ver=')===-1) {
-                if(!version){
-                    version = themify_vars.version;
-                }
-                fullHref+='?ver=' + version;
-            }
-            ss.setAttribute('href', fullHref);
-            ss.setAttribute('rel', 'stylesheet');
-            ss.setAttribute('importance', 'low');
-            ss.setAttribute('media', 'only_x');
-            ss.setAttribute('id', id);
-            if ('isApplicationInstalled' in navigator) {
-                ss.onloadcssdefined(onload);
-            } else {
-                ss.addEventListener('load', onload, {passive: true, once: true});
-            }
-            let ref = before;
-            if (!ref) {
-                const critical_st = doc.getElementById('tf_lazy_common');
-                ref = critical_st ? critical_st.nextSibling : doc.head.firstElementChild;
-            }
-            ref.parentNode.insertBefore(ss, (before ? ref : ref.nextSibling));
-            return this;
-        },
-        InitGallery() {
-            const lbox = this.is_builder_active === false && themify_vars['lightbox'] ? themify_vars.lightbox : false;
-            if (lbox !== false && lbox['lightboxOn'] !== false && this.jsLazy['tf_gal'] === und) {
-                this.jsLazy['tf_gal'] = true;
+        gallery() {
+            const lbox = this.is_builder_active === false && vars.lightbox ? vars.lightbox : false;
+            if (lbox !== false && lbox.lightboxOn !== false && !this.jsLazy.has('tf_gal')) {
+                this.jsLazy.set('tf_gal',true);
                 const self = this,
                         hash = win.location.hash.replace('#', ''),
-                        p = self.body.parent(),
                         args = {
-                            'extraLightboxArgs': themify_vars['extraLightboxArgs'],
-                            'lightboxSelector': lbox['lightboxSelector'] ? lbox['lightboxSelector'] : '.themify_lightbox',
-                            'gallerySelector': lbox['gallerySelector'] ? lbox['gallerySelector'] : '.gallery-item a',
-                            'contentImagesAreas': lbox['contentImagesAreas'],
-                            'i18n': lbox['i18n'] ? lbox['i18n'] : []
+                            extraLightboxArgs: vars.extraLightboxArgs,
+                            lightboxSelector: lbox.lightboxSelector || '.themify_lightbox',
+                            gallerySelector: lbox.gallerySelector || '.gallery-item a',
+                            contentImagesAreas: lbox.contentImagesAreas,
+                            i18n: lbox.i18n || [],
+                            disable_sharing:lbox.disable_sharing
                         };
-                if (lbox['disable_sharing']) {
-                    args['disableSharing'] = lbox['disable_sharing'];
-                }
                 let isWorking = false;
-                const isImg =  (url)=>{
-                    return url.match(/\.(gif|jpg|jpeg|tiff|png|webp|apng)(\?fit=\d+(,|%2C)\d+)?(\&ssl=\d+)?$/i);
+                const isImg =  url=>{
+                    return url?url.match(/\.(gif|jpg|jpeg|tiff|png|webp|apng)(\?fit=\d+(,|%2C)\d+)?(\&ssl=\d+)?$/i):null;
                 },
-                _click = function (e) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
+                openLightbox = el=> {
                     if (isWorking === true) {
                         return;
                     }
+                    doc.tfOff('click',globalClick);
                     isWorking = true;
-                    const _this = $(e.currentTarget),
-                            link = _this[0].getAttribute('href'),
-                            loaderP = doc.createElement('div'),
-                            loaderC = doc.createElement('div'),
-                            checkLoad = ()=> {
-                                if (self.cssLazy['tf_lightbox'] === true && self.jsLazy['tf_lightbox'] === true && self.jsLazy['tf_gallery'] === true) {
-                                    p.off('click.tf_gallery');
-                                    self.trigger('tf_gallery_init', args);
-                                    _this.click();
-                                    loaderP.remove();
-                                }
-                            };
+                    const link = el.getAttribute('href'),
+                        loaderP = doc.createElement('div'),
+                        loaderC = doc.createElement('div');
                     loaderP.className = 'tf_lazy_lightbox tf_w tf_h';
-                    if (link && isImg(link)) {
+                    if (isImg(link)) {
                         loaderP.textContent = 'Loading...';
                         const img = new Image();
                         img.decoding = 'async';
                         img.src = link;
+                        img.decode();
                     } else {
                         loaderC.className = 'tf_lazy tf_w tf_h';
                         loaderP.appendChild(loaderC);
                     }
-                    self.body[0].appendChild(loaderP);
-                    if (!self.cssLazy['tf_lightbox']) {
-                        self.LoadCss(self.cssUrl+self.css_modules.lb.u, self.css_modules.lb.v, null, null, ()=> {
-                            self.cssLazy['tf_lightbox'] = true;
-                            checkLoad();
-                        });
-                    }
-                    if (!self.jsLazy['tf_lightbox']) {
-                        self.LoadAsync(self.jsUrl+self.js_modules.lb.u, ()=> {
-                            self.jsLazy['tf_lightbox'] = true;
-                            checkLoad();
-                        }, self.js_modules.lb.v, null, ()=> {
-                            return 'undefined' !== typeof $.fn.magnificPopup;
-                        });
-                    }
-                    if (!self.jsLazy['tf_gallery']) {
-                        self.LoadAsync(self.jsUrl+self.js_modules.gal.u, ()=> {
-                            self.jsLazy['tf_gallery'] = true;
-                            checkLoad();
-                        }, self.js_modules.gal.v, null, ()=> {
-                            return !!self.jsLazy['tf_gallery'];
-                        });
-                    }
-                    checkLoad();
+                    doc.body.appendChild(loaderP);
+                    
+                    Promise.all([
+                        self.loadCss('lightbox','tf_lightbox'),
+                        self.loadJs('lightbox.min','undefined' !== typeof $.fn.magnificPopup),
+                        self.loadJs('themify.gallery')
+                    ])
+                    .then(()=>{
+                        self.trigger('tf_gallery_init', args);
+                        el.click();
+                    }).
+                    finally(()=>{
+                        loaderP.remove();
+                    });
                 };
-                p.on('click.tf_gallery', args['lightboxSelector'], _click);
-                if (args['gallerySelector']) {
-                    p.on('click.tf_gallery', args['gallerySelector'], function (e) {
-                        if (isImg(this.getAttribute('href')) && !this.closest('.module-gallery')) {
-                            _click(e);
+                const globalClick=e=>{
+                    const el=e.target?e.target.closest('a'):null;
+                    if(el){
+                        const galSel=args.gallerySelector,
+                        contentSel=args.contentImagesAreas,
+                        lbSel=args.lightboxSelector;
+                        if(el.closest(lbSel) || (isImg(el.getAttribute('href')) && ((contentSel && el.closest(contentSel)) || (galSel && (el.match(galSel) || el.closest(galSel)) && !el.closest('.module-gallery'))))){
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            openLightbox(el);
                         }
-                    });
-                }
-                if (lbox['contentImagesAreas']) {
-                    p.on('click.tf_gallery', '.post-content a', function (e) {
-                        if (isImg(this.getAttribute('href')) && $(this).closest(args.contentImagesAreas)) {
-                            _click(e);
-                        }
-                    });
-                }
+                    }
+                };
+                doc.tfOn('click',globalClick);
                 if (hash && hash !== '#') {
-                    let item = doc.querySelector('img[alt="' + decodeURI(hash) + '"]');
-                    item = null === item ? doc.querySelector('img[title="' + decodeURI(hash) + '"]') : item;
+                    const h=decodeURI(hash);
+                    let item = doc.querySelector('img[alt="' + h + '"],img[title="' + h + '"]');
                     if (item) {
                         item = item.closest('.themify_lightbox');
                         if (item) {
-                            item.click();
+                            openLightbox(item);
                         }
                     }
                 }
@@ -1004,9 +843,9 @@ var Themify;
                             for (let i = entries.length - 1; i > -1; --i) {
                                 if (this.lazyScrolling === null && entries[i].isIntersecting === true) {
                                     _self.unobserve(entries[i].target);
-                                    this.requestIdleCallback(()=> {
+                                    requestAnimationFrame(()=> {
                                         this.lazyScroll([entries[i].target], init);
-                                    }, 70);
+                                    });
                                 }
                             }
                         };
@@ -1017,57 +856,51 @@ var Themify;
                             _self.disconnect();
                             let intersect2 = false;
                             const ev = this.isTouch ? 'touchstart' : 'mousemove',
-                                    oneScroll = ()=> {
+                                    oneScroll = ()=> {//pre cache after one scroll/mousemove
                                         if (intersect2) {
                                             intersect2.disconnect();
                                         }
                                         intersect2 = null;
-                                        win.removeEventListener(ev, oneScroll, {once: true, passive: true});
-                                        win.removeEventListener('scroll', oneScroll, {once: true, passive: true});
+                                        win.tfOff('scroll '+ev, oneScroll, {once: true, passive: true});
                                         this.observer = new IntersectionObserver((entries, _self)=> {
                                             lazy(entries, _self);
                                         }, {
-                                            rootMargin: '300px 0px 300px 0px'
+                                            rootMargin: '300px 0px'
                                         });
+                                        let j = 0;
+                                        const prefetched = new Set();
                                         for (let i = 0; i < len; ++i) {
                                             if (items[i].hasAttribute('data-lazy') && !items[i].hasAttribute('data-tf-not-load')) {
                                                 this.observer.observe(items[i]);
-                                            }
-                                        }
-                                        setTimeout(()=> {//pre cache after one scroll/mousemove
-                                            const prefetched = [];
-                                            let j = 0;
-                                            for (let i = 0; i < len; ++i) {
-                                                if (items[i].hasAttribute('data-tf-src') && items[i].hasAttribute('data-lazy')) {
-                                                    if (j < 10) {
-                                                        let src = items[i].getAttribute('data-tf-src');
-                                                        if (src && !prefetched[src]) {
-                                                            prefetched[src] = true;
-                                                            let img = new Image(),
-                                                            srcset=items[i].getAttribute('data-tf-srcset');
-                                                            img.decoding = 'async';
-                                                            if(srcset){
-                                                                img.srcset = srcset;
-                                                            }
-                                                            img.src = src;
-                                                            ++j;
+                                                if (j < 10 && items[i].hasAttribute('data-tf-src') && items[i].hasAttribute('data-lazy')) {
+                                                    let src = items[i].getAttribute('data-tf-src');
+                                                    if (src && !prefetched.has(src)) {
+                                                        prefetched.add(src);
+                                                        let img = new Image(),
+                                                        srcset=items[i].getAttribute('data-tf-srcset');
+                                                        img.decoding = 'async';
+                                                        if(srcset){
+                                                            img.srcset = srcset;
                                                         }
-                                                    } else {
-                                                        break;
+                                                        img.src = src;
+                                                        img.decode();
+                                                        ++j;
                                                     }
                                                 }
                                             }
-                                            if (doc.getElementsByClassName('wow')[0]) {
-                                                this.loadWowJs();
-                                            }
-                                        }, 1500);
+                                        }
+                                        if (doc.tfClass('wow')[0]) {
+                                            this.requestIdleCallback(()=> {
+                                                this.wow();
+                                            }, 1500);
+                                        } 
+                                        prefetched.clear();
                                     };
-                            win.addEventListener('beforeprint', ()=> {
+                            win.tfOn('beforeprint', ()=> {
                                 this.lazyScroll(doc.querySelectorAll('[data-lazy]'), true);
-                            }, {passive: true});
-
-                            win.addEventListener('scroll', oneScroll, {once: true, passive: true});
-                            win.addEventListener(ev, oneScroll, {once: true, passive: true});
+                            }, {passive: true})
+                            .tfOn('scroll '+ev, oneScroll, {once: true, passive: true});
+                    
                             setTimeout(()=>{
                                 if (intersect2 === false) {
                                     intersect2 = new IntersectionObserver((entries, _self)=>{
@@ -1075,8 +908,6 @@ var Themify;
                                             lazy(entries, _self, true);
                                         }
                                         _self.disconnect();
-                                    }, {
-                                        threshold: .1
                                     });
                                     const len2 = len > 15 ? 15 : len;
                                     for (let i = 0; i < len2; ++i) {
@@ -1099,20 +930,22 @@ var Themify;
                 }
             }
         },
-        lazyScroll(items, init) {
+        async lazyScroll(items, init) {
             let len = 0;
             if (items) {
                 len = items.length;
                 if (len === und) {
                     items = [items];
                     len = 1;
-                } else if (len === 0) {
+                } 
+                else if (len === 0) {
                     return;
                 }
             }
             const svg_callback = function () {
                 this.classList.remove('tf_svg_lazy_loaded', 'tf_svg_lazy');
-            };
+            },
+            prms=[];
             for (let i = len - 1; i > -1; --i) {
                 let el = items[i],
                         tagName = el.tagName;
@@ -1123,46 +956,71 @@ var Themify;
                 } else {
                     el.removeAttribute('data-lazy');
                     if (tagName !== 'IMG' && (tagName === 'DIV' || !el.hasAttribute('data-tf-src'))) {
-                        let $el = $(el);
                         try {
                             el.classList.remove('tf_lazy');
-                            this.reRun($el, null, true);
-                            this.trigger('tf_lazy', $el);
+                            prms.push(this.reRun(el, true));
+                            prms.push(this.trigger('tf_lazy', el));
                         } catch (e) {
                             console.log(e);
                         }
-                    } else if (tagName !== 'svg') {
+                    } 
+                    else if (tagName !== 'svg') {
                         let src = el.getAttribute('data-tf-src'),
-                                srcset = el.getAttribute('data-tf-srcset');
-                        if (src) {
-                            el.setAttribute('src', src);
-                            el.removeAttribute('data-tf-src');
-                        }
-                        if (srcset) {
-                            let sizes = el.getAttribute('data-tf-sizes');
-                            if (sizes) {
-                                el.setAttribute('sizes', sizes);
-                                el.removeAttribute('data-tf-sizes');
+                            srcset = el.getAttribute('data-tf-srcset'),
+                            sizes = srcset?el.getAttribute('data-tf-sizes'):null;
+                        if(src || srcset){
+                            if(tagName==='IMG'){
+                                let img=new Image(),
+                                    attr=el.attributes;
+                                    for(let j=attr.length-1;j>-1;--j){
+                                        let n=attr[j].name;
+                                        if(n!=='src' && n!=='srcset' && n!=='sizes' && n!=='loading' && n.indexOf('data-tf')===-1){
+                                            img.setAttribute(n,attr[j].value);
+                                        }
+                                    }
+                                    img.decoding='async';
+                                    if (srcset) {
+                                        if (sizes) {
+                                            img.setAttribute('sizes', sizes);
+                                        }
+                                        img.srcset=srcset;
+                                    }
+                                    if (src) {
+                                        img.src=src;
+                                    }
+									let p= new Promise(resolve=>{
+									   img.decode()
+										.catch(()=>{})//need for svg
+										.finally(()=>{
+											requestAnimationFrame(()=>{
+												el.replaceWith(img);
+												if(img.classList.contains('tf_svg_lazy')){
+													img.tfOn('transitionend', svg_callback, {once: true, passive: true});
+													requestAnimationFrame(()=>{
+													   img.classList.add('tf_svg_lazy_loaded');
+													});
+												}
+												resolve();
+											});
+										});
+									});
+                                    prms.push(p);
                             }
-                            el.setAttribute('srcset', srcset);
-                            el.removeAttribute('data-tf-srcset');
-                        }
-                        el.removeAttribute('loading');
-                        if (el.classList.contains('tf_svg_lazy')) {
-                            this.imagesLoad(el, svg=> {
-                                requestAnimationFrame(()=>{
-                                    svg.addEventListener('transitionend', svg_callback, {once: true, passive: true});
-                                    svg.classList.add('tf_svg_lazy_loaded');
-                                });
-                            });
-                        } else if (tagName !== 'IFRAME') {
-                            if(init !== true && el.parentNode !== this.body[0]){
-                                el.parentNode.classList.add('tf_lazy');
-                                this.imagesLoad(el, item=> {
-                                    item.parentNode.classList.remove('tf_lazy');
-                                });
+                            else{
+                                if (src) {
+                                    el.src=src;
+                                    el.removeAttribute('data-tf-src');
+                                }
+                                el.removeAttribute('loading');
+                                if(init !== true && el.parentNode !== doc.body){
+                                    el.parentNode.classList.add('tf_lazy');
+                                    let p=this.imagesLoad(el).then(item=>{
+                                        item.parentNode.classList.remove('tf_lazy');
+                                    });
+                                    prms.push(p);
+                                }
+                                this.largeImages();
                             }
-                            this.checkLargeImages();
                         }
                     }
                 }
@@ -1170,84 +1028,48 @@ var Themify;
                     this.observer.unobserve(el);
                 }
             }
+            return Promise.all(prms).catch(e=>{});
         },
-        reRun(el, type, isLazy) {
+        async reRun(el, isLazy) {
             if (isLazy !== true) {
-                this.loadFonts();
+                this.commonJs();
             }
-            if (typeof ThemifyBuilderModuleJs !== 'undefined') {
-                ThemifyBuilderModuleJs.loadOnAjax(el, type, isLazy);
-                this.initComponents(el, isLazy);
-            } else if (!this.is_builder_loaded && themify_vars && !themify_vars['is_admin'] && win['tbLocalScript'] && doc.getElementsByClassName('module_row')[0]!==und) {
-                const burl=this.jsUrl===''?'':win['tbLocalScript'].builder_url;
-                this.LoadAsync(burl + win['tbLocalScript'].js_modules.b.u,   ()=> {
-                    this.is_builder_loaded = true;
-                    ThemifyBuilderModuleJs.loadOnAjax(el, type, isLazy);
-                    this.initComponents(el, isLazy);
-                }, win['tbLocalScript'].js_modules.b.v, null,   ()=> {
-                    return typeof ThemifyBuilderModuleJs !== 'undefined';
-                });
-            } else {
-                this.initComponents(el, isLazy);
-            }
-        },
-        loadAnimateCss(callback) {
-            if (this.cssLazy['animate'] === und) {
-                this.LoadCss(this.cssUrl+this.css_modules.an.u, this.css_modules.an.v, null, null,  ()=> {
-                    this.cssLazy['animate'] = true;
-                    if (callback) {
-                        callback();
+            if(vars && !vars.is_admin){
+                const isBuilder=this.is_builder_loaded===true || typeof ThemifyBuilderModuleJs !== 'undefined',
+                    pr=[];
+                if(isBuilder===true || (win.tbLocalScript && doc.tfClass('module_row')[0]!==und)){
+                    if(isBuilder===false){
+                       await this.loadJs(this.builder_url+'js/themify.builder.script',typeof ThemifyBuilderModuleJs !== 'undefined'); 
                     }
-                });
-            } else if (callback) {
-                callback();
+                    pr.push(ThemifyBuilderModuleJs.loadModules(el, isLazy));
+                }
+                pr.push(this.initComponents(el, isLazy));
+                return Promise.all(pr);
             }
         },
-        loadWowJs(callback) {
-            if (this.jsLazy['tf_wow'] === und || this.cssLazy['animate'] === und) {
-                const check = ()=>{
-                            if (this.cssLazy['animate'] === true && this.jsLazy['tf_wow'] === true && callback) {
-                                callback();
-                            }
-                        };
-                if (this.cssLazy['animate'] === und) {
-                    this.loadAnimateCss(check);
-                }
-                if (this.jsLazy['tf_wow'] === und) {
-                    this.LoadAsync(this.jsUrl+this.js_modules.wow.u, ()=> {
-                        this.jsLazy['tf_wow'] = true;
-                        check();
-                    }, this.js_modules.wow.v, null, ()=> {
-                        return !!this.jsLazy['tf_wow'];
-                    });
-                }
-            } else if (callback) {
-                callback();
-            }
+        animateCss() {
+            return this.loadCss('animate.min','animate');
         },
-        loadDropDown(items, callback, load_stylesheet) {
-            if (!items || items.length === 0) {
-                return;
-            }
-            if (load_stylesheet !== false) {
-                this.LoadCss(this.cssUrl+this.css_modules.drop.u,this.css_modules.drop.v);
-            }
-            this.LoadAsync(this.jsUrl+this.js_modules.drop.u, ()=>  {
-                this.jsLazy['tf_dropdown'] = true;
+        wow() {
+            return Promise.all([this.animateCss(),this.loadJs('tf_wow')]);
+        },
+        async dropDown(items, load_stylesheet) {
+            if (items && items.length>0) {
+                const prms=[];
+                if (load_stylesheet !== false) {
+                    prms.push(this.loadCss('dropdown','tf_dropdown'));
+                }
+                prms.push(this.loadJs('themify.dropdown'));
+                await Promise.all(prms);
                 this.trigger('tf_dropdown_init', [items]);
-                if (callback) {
-                    callback();
-                }
-            }, this.js_modules.drop.v, null, ()=>  {
-                return !!this.jsLazy['tf_dropdown'];
-            });
+            }
         },
-        initResizeHelper() {
+        resizer() {
             let running = false,
                     timeout,
                     timer;
             const ev = 'onorientationchange' in win ? 'orientationchange' : 'resize';
-            win.addEventListener(ev, ()=> {
+            win.tfOn(ev, ()=> {
                 if (running) {
                     return;
                 }
@@ -1263,9 +1085,7 @@ var Themify;
                         const w = win.innerWidth,
                                 h = win.innerHeight;
                         if (h !== this.h || w !== this.w) {
-                            const params = {w: w, h: h, type: 'tfsmartresize', 'origevent': ev};
-                            this.trigger('tfsmartresize', params);
-                            $(win).triggerHandler('tfsmartresize', [params]);//deprecated
+                            this.trigger('tfsmartresize', {w: w, h: h});
                             this.w = w;
                             this.h = h;
                         }
@@ -1276,10 +1096,10 @@ var Themify;
             }, {passive: true});
         },
         mobileMenu() {//deprecated
-            if (themify_vars.menu_point) {
-                const w = parseInt(themify_vars.menu_point),
-                        _init =  (e)=> {
-                            const cl = this.body[0].classList;
+            if (vars.menu_point) {
+                const w = parseInt(vars.menu_point),
+                        _init = e=> {
+                            const cl = doc.body.classList;
                             if ((!e && this.w <= w) || (e && e.w <= w)) {
                                 cl.add('mobile_menu_active');
                             } else if (e !== und) {
@@ -1290,17 +1110,17 @@ var Themify;
                 this.on('tfsmartresize', _init);
             }
         },
-        initWC(force) {
-            if (themify_vars.wc_js) {
-                if (!themify_vars.wc_js_normal) {
+        async wc(force) {
+            if (vars.wc_js) {
+                if (!vars.wc_js_normal) {
                     setTimeout(()=>{
-                        doc.addEventListener((this.isTouch ? 'touchstart' : 'mousemove'), ()=>{
+                        doc.tfOn((this.isTouch ? 'touchstart' : 'mousemove'), ()=>{
                             const fr = doc.createDocumentFragment();
-                            for (let i in themify_vars.wc_js) {
+                            for (let i in vars.wc_js) {
                                 let link = doc.createElement('link'),
-                                        href = themify_vars.wc_js[i];
+                                        href = vars.wc_js[i];
                                 if (href.indexOf('ver', 12) === -1) {
-                                    href += '?ver=' + themify_vars.wc_version;
+                                    href += '?ver=' + vars.wc_version;
                                 }
                                 link.as = 'script';
                                 link.rel = 'prefetch';
@@ -1311,76 +1131,51 @@ var Themify;
                         }, {once: true, passive: true});
                     }, 1800);
                 }
-                this.component('wc','wc',force);
+                await this.loadJs('wc');
+                this.trigger('tf_wc_init', force);
             }
         },
-        megaMenu(menu, disable) {
-            if (menu && !menu.dataset['init']) {
+        megaMenu(menu) {
+            if (menu && !menu.dataset.init) {
                 menu.dataset.init = true;
-                const isDisabled = disable || themify_vars.disableMega,
-                        self = this,
-                        maxW = 1 * themify_vars.menu_point + 1,
-                        removeDisplay = function (e) {
-                            const el = e instanceof jQuery ? e : this,
-                                    w = e instanceof jQuery ? self.w : e.w;
-                            if (w > maxW) {
-                                el.css('display', '');
-                            } else {
-                                self.on('tfsmartresize', removeDisplay.bind(el), true);
-                            }
-                        },
-                        closeDropdown = function (e) {
-                            const el = e instanceof jQuery ? e : this;
-                            if (e.target && !el[0].parentNode.contains(e.target)) {
-                                el.css('display', '');
-                                el[0].parentNode.classList.remove('toggle-on');
-                            } else {
-                                doc.addEventListener('touchstart', closeDropdown.bind(el), {once: true});
-                            }
-                        };
-                if (!isDisabled && menu.getElementsByClassName('mega-link')[0]) {
-                    const loadMega =  ()=>  {
-                        const check =  ()=> {
-                            if (self.cssLazy['tf_megamenu'] === true && self.jsLazy['tf_megamenu'] === true) {
-                                self.trigger('tf_mega_menu', [menu, maxW]);
-                            }
-                        };
-                        if (!self.cssLazy['tf_megamenu']) {
-                            self.LoadCss(self.url+'/megamenu/css/megamenu.min.css', self.css_modules.mega.v, null, 'screen and (min-width:' + maxW + 'px)',  ()=>  {
-                                self.cssLazy['tf_megamenu'] = true;
-                                check();
-                            });
-                        }
-                        if (!self.jsLazy['tf_megamenu']) {
-                            self.LoadAsync(self.url+'/megamenu/js/themify.mega-menu.min.js',  ()=>  {
-                                self.jsLazy['tf_megamenu'] = true;
-                                check();
-                            },self.js_modules.mega.v, null,  ()=>  {
-                                return !!self.jsLazy['tf_megamenu'];
-                            });
-                        }
-                        check();
-                    };
-                    if (this.w >= maxW || !this.isTouch) {
-                        loadMega();
-                    } else if (this.isTouch) {
-                        const _resize = function () {
-                            const ori = typeof this.screen !== 'undefined' && typeof this.screen.orientation !== 'undefined' ? this.screen.orientation.angle : this.orientation,
-                                    w = (ori === 90 || ori === -90) ? this.innerHeight : this.innerWidth;
-                            if (w >= maxW) {
-                                this.removeEventListener('orientationchange', _resize, {passive: true});
-                                loadMega();
-                            }
-                        };
-                        win.addEventListener('orientationchange', _resize, {passive: true});
-                    }
-                } else if (!self.isTouch) {
-                        setTimeout( ()=>  {
-                            self.edgeMenu();
-                        }, 1500);
-                }
-                menu.addEventListener('click', function (e) {
-                    if (e.target.classList.contains('child-arrow') || (e.target.tagName === 'A' && (e.target.getAttribute('href') === '#' || e.target.parentNode.classList.contains('themify_toggle_dropdown')))) {
+                const self = this,
+					maxW = 1 * vars.menu_point + 1,
+					removeDisplay = function (e) {
+						const el = e instanceof jQuery ? e : this,
+								w = e instanceof jQuery ? self.w : e.w;
+						if (w > maxW) {
+							el.css('display', '');
+						} else {
+							self.on('tfsmartresize', removeDisplay.bind(el), true);
+						}
+					},
+					closeDropdown = function (e) {
+						const el = e instanceof jQuery ? e : this;
+						if (e.target && !el[0].parentNode.contains(e.target)) {
+							el.css('display', '')
+							[0].parentNode.classList.remove('toggle-on');
+						} else {
+							doc.tfOn('touchstart', closeDropdown.bind(el), {once: true});
+						}
+					};
+				if (!this.isTouch) {
+					if(this.cssLazy.has('tf_megamenu') && menu.tfClass('mega-link')[0]){
+						Promise.all([
+                            this.loadCss(this.url+'megamenu/css/megamenu', 'tf_megamenu',null, null, 'screen and (min-width:' + maxW + 'px)'),
+                            this.loadJs(this.url+'megamenu/js/themify.mega-menu')]
+                        ).then(()=>{
+                            this.trigger('tf_mega_menu', [menu, maxW]);
+                        });
+					}
+					else{
+						this.requestIdleCallback( ()=>  {
+                            this.edgeMenu();
+                        },-1,2000);
+					}
+				}
+                menu.tfOn('click', function (e) {
+                    const target=e.target;
+                    if (!target.closest('.with-sub-arrow') && (target.classList.contains('child-arrow') || (target.tagName === 'A' && (!target.href || target.getAttribute('href') === '#' || target.parentNode.classList.contains('themify_toggle_dropdown'))))) {
                         let el = $(e.target);
                         if (el[0].tagName === 'A') {
                             if (!el.find('.child-arrow')[0]) {
@@ -1393,26 +1188,26 @@ var Themify;
                         e.stopPropagation();
                         const li = el.parent();
                         let els = null,
-                                is_toggle = und !== themify_vars.m_m_toggle && !li.hasClass('toggle-on') && self.w < maxW;
+                                is_toggle = und !== vars.m_m_toggle && !li.hasClass('toggle-on') && self.w < maxW;
                         if (is_toggle) {
                             els = li.siblings('.toggle-on');
                             is_toggle = els.length > 0;
                         }
                         if (self.w < maxW || e.target.classList.contains('child-arrow') || el.find('.child-arrow:visible').length > 0) {
                             const items = el.next('div, ul'),
-                                    ist = items[0].getAttribute('style'),
-                                    headerwrap = doc.getElementById('headerwrap');
+                                    ist = items[0].style,
+                                    headerwrap = doc.tfId('headerwrap');
                             if (self.w < maxW && (ist === null || ist === '')) {
                                 removeDisplay(items);
                             }
-                            if (self.isTouch && !li.hasClass('toggle-on') && !self.body[0].classList.contains('mobile-menu-visible') && (null === headerwrap || (headerwrap.offsetWidth > 400))) {
+                            if (self.isTouch && !li.hasClass('toggle-on') && !doc.body.classList.contains('mobile-menu-visible') && (null === headerwrap || (headerwrap.offsetWidth > 400))) {
                                 closeDropdown(items);
                                 li.siblings('.toggle-on').removeClass('toggle-on');
                             }
                             items.toggle('fast');
                             if (is_toggle) {
                                 const slbs = els.find('>div,>ul'),
-                                        sst = slbs[0].getAttribute('style');
+                                        sst = slbs[0].style;
                                 if (self.w < maxW && (sst === null || sst === '')) {
                                     removeDisplay(slbs);
                                 }
@@ -1438,199 +1233,199 @@ var Themify;
             }
         },
         ajaxSearch(items) {
-            if(this.is_builder_active===true){
-                return;
-            }
-            const self = this,
-                __callback=function(e){
-                        const el=this,
-                                isOverlay=e.type==='click',
-                                type=isOverlay?'overlay':'dropdown',
-                                css=['search_form','search_form_ajax','search_form_' + type],
-                                _check =  ()=> {
-                                     for(let i=css.length-1;i>-1;--i){
-                                        if (self.cssLazy['tf_'+css[i]]!==true) {
-                                            return;
-                                        }
-                                    }
-                                    if(self.jsLazy['tf_search_ajax']){
-                                        self.trigger('themify_overlay_search_init', [el]);
-                                        self.triggerEvent(el, e.type);
-                                    }
-                                };
-                        if(isOverlay){
-                                e.preventDefault();
-                                e.stopImmediatePropagation();
-                        }
-                if(isOverlay && el.classList.contains('tf_search_icon')){
-					css.push('searchform_overlay'); 
-                }
-                _check();
-                for(let i=css.length-1;i>-1;--i){
-					let key='tf_'+css[i];
-                    if (!self.cssLazy[key]) {
-                        let url=self.cssUrl,
-							v=null;
-						if(css[i]==='searchform_overlay'){
-							v=themify_vars.theme_v;
-							url=themify_vars.theme_url+'/styles/modules/';
-						}
-                        self.LoadCss(url+css[i].replaceAll('_','-')+'.css', v, null, null, ()=> {
-                            self.cssLazy[key] = true;
-                            _check();
-                        });
+            if(this.is_builder_active===false){
+                const __callback=e=>{
+                            const el=e.currentTarget,
+                                    isOverlay=e.type==='click',
+                                    type=isOverlay?'overlay':'dropdown',
+                                    css=['search_form','search_form_ajax','search_form_' + type];
+                            if(isOverlay){
+                                    e.preventDefault();
+                                    e.stopImmediatePropagation();
+                            }
+                    if(isOverlay && el.classList.contains('tf_search_icon')){
+                        css.push('searchform_overlay'); 
                     }
-                }
-                if (!self.jsLazy['tf_search_ajax']) {
-                    self.LoadAsync(self.jsUrl+self.js_modules.as.u, ()=>{
-                        self.jsLazy['tf_search_ajax'] = true;
-                        _check();
-                    }, self.js_modules.as.v, null, ()=> {
-                        return !!self.jsLazy['tf_search_ajax'];
+                    const prms=[this.loadJs('ajax-search')];
+                    for(let i=css.length-1;i>-1;--i){
+                        let url='',
+                            v=null;
+                            if(css[i]==='searchform_overlay'){
+                                v=vars.theme_v;
+                                url=vars.theme_url+'/styles/modules/';
+                            }
+                        prms.push(this.loadCss(url+css[i].replaceAll('_','-'),null, v));
+                    }
+                    Promise.all(prms).finally(()=>{
+                        this.trigger('themify_overlay_search_init', [el]);
+                        this.triggerEvent(el, e.type);
                     });
-                }
-            };
-            for(let i=items.length-1;i>-1;--i){
-                if(items[i].hasAttribute('data-ajax') && items[i].dataset.ajax===''){
-                    continue;
-                }
-                let isIcon=items[i].classList.contains('tf_search_icon'),
-                    isOverlay= isIcon || items[i].classList.contains('tf_search_overlay'),
-                    el,
-                    ev;
-                if(isOverlay===false){
-                    ev='focus';
-                    el=items[i].querySelector('input[name="s"]');
-                    el.autocomplete = 'off';
-                }
-                else{
-                    ev='click';
-                    el=isIcon?items[i]:items[i].getElementsByClassName('tf_search_icon')[0];
-                }
-                if(el){
-                    el.addEventListener(ev,__callback, {once: true,passive:!isOverlay});
-                }
-            }
-        },
-        stickyBuy() {
-            const pr_wrap = doc.querySelector('#content .product') || doc.querySelector('.tbp_template.product'),
-                    st_buy = doc.getElementById('tf_sticky_buy');
-            if (st_buy && pr_wrap) {
-                (new IntersectionObserver((entries, _self)=>{
-                    if (entries[0].isIntersecting || entries[0].boundingClientRect.top < 0) {
-                        _self.disconnect();
-                        let loaded = {},
-                                check =  ()=> {
-                                    if (loaded['stb'] === true && loaded['stb_t'] === true && loaded['js_stb_t'] === true) {
-                                        this.trigger('tf_sticky_buy_init', [pr_wrap, st_buy]);
-                                        loaded = null;
-                                    }
-                                };
-                        this.LoadCss(this.cssUrl+this.css_modules.stb.u, this.css_modules.stb.v, null, null,  ()=> {
-                            loaded['stb'] = true;
-                            check();
-                        });
-                        if (this.css_modules.stb_t) {
-                            this.LoadCss(this.cssUrl+this.css_modules.stb_t.u, this.css_modules.stb_t.v, null, null,  ()=> {
-                                loaded['stb_t'] = true;
-                                check();
-                            });
-                        } else {
-                            loaded['stb_t'] = true;
-                        }
-                        this.LoadAsync(this.jsUrl+this.js_modules.stb.u, ()=> {
-                            loaded['js_stb_t'] = true;
-                            check();
-                        },this.js_modules.stb.v);
+                };
+                for(let i=items.length-1;i>-1;--i){
+                    if(items[i].hasAttribute('data-ajax') && items[i].dataset.ajax===''){
+                        continue;
                     }
-                })).observe(doc.getElementById('tf_sticky_buy_observer'));
+                    let isIcon=items[i].classList.contains('tf_search_icon'),
+                        isOverlay= isIcon || items[i].classList.contains('tf_search_overlay'),
+                        el,
+                        ev;
+                    if(isOverlay===false){
+                        ev='focus';
+                        el=items[i].querySelector('input[name="s"]');
+                        el.autocomplete = 'off';
+                    }
+                    else{
+                        ev='click';
+                        el=isIcon?items[i]:items[i].tfClass('tf_search_icon')[0];
+                    }
+                    if(el){
+                        el.tfOn(ev,__callback, {once: true,passive:!isOverlay});
+                    }
+                }
             }
         },
-        loadWPEmbed(items) {
-            if (items instanceof jQuery) {
-                items = items.get();
-            } else if (items.length === und) {
+        async stickyBuy(el) {
+            await Promise.all([this.loadCss('sticky-buy'),this.loadJs('sticky-buy')]);
+            this.trigger('tf_sticky_buy_init', el);
+        },
+        async wpEmbed(items) {
+            if (items.length === und) {
                 items = [items];
             }
             if (items[0] !== und) {
                 const embeds = [];
                 for (let i = items.length - 1; i > -1; --i) {
-                    if (!items[i].hasAttribute('data-done') && items[i].tagName === 'IFRAME') {
-                        items[i].setAttribute('data-done', 1);
+                    if (items[i].tagName === 'IFRAME' && !items[i].dataset.done) {
+                        items[i].dataset.done=1;
                         embeds.push(items[i]);
                     }
                 }
                 if (embeds[0] !== und) {
-                    this.LoadAsync(themify_vars.wp_embed, ()=> {
-                        for (let i = embeds.length - 1; i > -1; --i) {
-                            let secret = embeds[i].getAttribute('data-secret');
-                            if (!secret) {
-                                secret = Math.random().toString(36).substr(2, 10);
-                                embeds[i].setAttribute('data-secret', secret);
-                            }
-                            if (!embeds[i].hasAttribute('src')) {
-                                embeds[i].setAttribute('src', embeds[i].getAttribute('data-tf-src'));
-                            }
-                            win.wp.receiveEmbedMessage({data: {message: 'height', value: this.h, secret: secret}, source: embeds[i].contentWindow});
+                    await this.loadJs(vars.wp_embed,('undefined' !== typeof win.wp && 'undefined' !== typeof win.wp.receiveEmbedMessage),vars.wp);
+                    for (let i = embeds.length - 1; i > -1; --i) {
+                        let secret = embeds[i].getAttribute('data-secret');
+                        if (!secret) {
+                            secret = Math.random().toString(36).substr(2, 10);
+                            embeds[i].setAttribute('data-secret', secret);
                         }
-                    }, themify_vars.wp, null, ()=> {
-                        return 'undefined' !== typeof win.wp && 'undefined' !== typeof win.wp.receiveEmbedMessage;
-                    });
+                        if (!embeds[i].hasAttribute('src')) {
+                            embeds[i].src=embeds[i].getAttribute('data-tf-src');
+                        }
+                        win.wp.receiveEmbedMessage({data: {message: 'height', value: this.h, secret: secret}, source: embeds[i].contentWindow});
+                    }
                 }
             }
         },
-        checkLargeImages(el){
-            if(themify_vars['lgi']!==und || this.is_builder_active===true){
-                setTimeout(()=>{
-                        this.requestIdleCallback(()=>{
-                            if(doc.querySelector('.tf_large_img:not(.tf_large_img_done)')){
-                                this.component('lgi','large_images',el);
-                            }
-                        });
-                },1000);
-            }
-        },
-        googleAnalytics() {
-            if(themify_vars['g_m_id']!==und){
-                this.requestIdleCallback( ()=>  {
-                    this.LoadAsync('https://www.googletagmanager.com/gtag/js?id='+themify_vars['g_m_id'],()=>{
-                        win.dataLayer = win.dataLayer || [];
-                        function gtag(){win.dataLayer.push(arguments);}
-                        gtag('js', new Date());
-                        gtag('config', themify_vars['g_m_id']);
-                        delete themify_vars['g_m_id'];
-                    },false,null,()=>{
-                        return !!win.google_tag_manager;
-                    });
-                }, 500);
-            }
-        },
-        tooltips() {
-                if ( themify_vars['menu_tooltips'].length || themify_vars['builder_tooltips'] ) {
-                    this.LoadAsync( this.jsUrl + this.js_modules.t.u, null, this.js_modules.t.v );
+        largeImages(el){
+            return new Promise( resolve=>{
+                if((vars.lgi!==und || this.is_builder_active===true) && doc.querySelector('.tf_large_img:not(.tf_large_img_done)')){
+                    this.requestIdleCallback(async()=>{
+                        await this.loadJs('large-image-alert.min');
+                        this.trigger('tf_large_images_init', el);
+                        resolve();
+                    },-1,1000);
                 }
+                else{
+                    resolve();
+                }
+            });
         },
-        fetch(body,type,params,url){
+        async googleAnalytics() {
+            if(vars.g_m_id!==und){
+                const gtag=()=>{
+                    win.dataLayer.push(arguments);
+                },
+                g_m_id=vars.g_m_id;
+                await this.loadJs('https://www.googletagmanager.com/gtag/js?id='+g_m_id,!!win.google_tag_manager,false); 
+                win.dataLayer = win.dataLayer || [];
+                gtag('js', new Date());
+                gtag('config', g_m_id);
+                delete vars.g_m_id;
+                win.tfOn('pageshow', e => {
+                    if (e.persisted === true) {
+                      gtag('event', 'page_view');
+                    }
+                },{passive:true});
+            }
+        },
+        async tooltips() {
+            return vars.menu_tooltips.length || vars.builder_tooltips?this.loadJs( 'tooltip'):1;
+        },
+        fetch(data,type,params,url){
+            url=url || vars.ajax_url;
             params=Object.assign({
                 credentials:'same-origin',
                 method:'POST',
                 headers:{}
             }, params);
-            params.headers['X-Requested-With']='XMLHttpRequest';
-            if(body){
-                params.body=body;
+            
+            if(params.mode===und && url.indexOf(location.origin)===-1){
+                params.mode='cors';
             }
-            url=url || themify_vars.ajax_url;
+            else if(params.mode!=='cors'){
+                params.headers['X-Requested-With']='XMLHttpRequest';
+            }
+            if(!type){
+                type='json';
+            }
+            if(type==='json'){
+                params.headers.accept='application/json, text/javascript, */*; q=0.01';
+            }
+            if(data){
+                let body;
+                if(data instanceof FormData){
+                    body=data;
+                }
+                else{
+                    body=new FormData();
+                    for(let k in data){
+                        if(typeof data[k]==='object' && !(data[k] instanceof Blob)){
+                            body.set(k,JSON.stringify(data[k]));
+                        }
+                        else{
+                            body.set(k,data[k]);
+                        }
+                    }
+                }
+                if(params.method==='POST'){
+					if(params.headers['Content-type']==='application/x-www-form-urlencoded'){
+						body=new URLSearchParams(body);
+					}
+					params.body=body;
+				}
+				else{
+					url = new URL(url,win.location);
+                    for(let pair of body.entries()) {
+                        url.searchParams.set(pair[0],pair[1]);
+                    }
+				}
+            }
             return fetch(url,params).then(res=>{
-                if(!type || type==='json'){
+                if(!res.ok){
+                    throw res;
+                }
+                if(type==='json'){
                     return res.json();
                 }
-                if(type==='text'){
-                   return res.text();
+                if(type==='blob'){
+                    return res.blob();
                 }
+                return res.text();
+                
+            }).
+            then(res=>{
+                if(res && (type==='html' || type==='text')){
+                    res=res.trim();
+                    if(type==='html' && res){
+                        const tmp=doc.createElement('template');
+                        tmp.innerHTML=res;
+                        res=tmp.content;
+                    }
+                }
+                return res;
             });
         }
     };
-    Themify.Init();
-
-})(window, document, undefined, jQuery);
+    Themify.init();
+﻿
+})(window, document, undefined, jQuery,themify_vars);

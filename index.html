@@ -9,7 +9,7 @@
 		<link rel="profile" href="https://gmpg.org/xfn/11">
 		<link href="https://fonts.cdnfonts.com/css/chalkduster" rel="stylesheet">
         
-		<style id="tb_inline_styles">.tb_animation_on{overflow-x:hidden}.themify_builder .wow{visibility:hidden;animation-fill-mode:both}.themify_builder .tf_lax_done{transition-duration:.8s;transition-timing-function:cubic-bezier(.165,.84,.44,1)}[data-sticky-active].tb_sticky_scroll_active{z-index:1}[data-sticky-active].tb_sticky_scroll_active .hide-on-stick{display:none}@media(min-width:1281px){.hide-desktop{width:0!important;height:0!important;padding:0!important;visibility:hidden!important;margin:0!important;display:table-column!important;background:0!important}}@media(min-width:769px) and (max-width:1280px){.hide-tablet_landscape{width:0!important;height:0!important;padding:0!important;visibility:hidden!important;margin:0!important;display:table-column!important;background:0!important}}@media(min-width:681px) and (max-width:768px){.hide-tablet{width:0!important;height:0!important;padding:0!important;visibility:hidden!important;margin:0!important;display:table-column!important;background:0!important}}@media(max-width:680px){.hide-mobile{width:0!important;height:0!important;padding:0!important;visibility:hidden!important;margin:0!important;display:table-column!important;background:0!important}}div.row_inner,div.subrow_inner{--gutter:3.2%;--narrow:1.6%;--none:0%;}@media(max-width:680px){
+		<style id="tb_inline_styles">.tb_animation_on{overflow-x:hidden}.themify_builder .wow{visibility:hidden;animation-fill-mode:both}.themify_builder .tf_lax_done{transition-duration:.8s;transition-timing-function:cubic-bezier(.165,.84,.44,1)}[data-sticky-active].tb_sticky_scroll_active{z-index:1}[data-sticky-active].tb_sticky_scroll_active .hide-on-stick{display:none}@media(min-width:1025px){.hide-desktop{width:0!important;height:0!important;padding:0!important;visibility:hidden!important;margin:0!important;display:table-column!important;background:0!important}}@media(min-width:769px) and (max-width:1024px){.hide-tablet_landscape{width:0!important;height:0!important;padding:0!important;visibility:hidden!important;margin:0!important;display:table-column!important;background:0!important}}@media(min-width:601px) and (max-width:768px){.hide-tablet{width:0!important;height:0!important;padding:0!important;visibility:hidden!important;margin:0!important;display:table-column!important;background:0!important}}@media(max-width:600px){.hide-mobile{width:0!important;height:0!important;padding:0!important;visibility:hidden!important;margin:0!important;display:table-column!important;background:0!important}}@media(max-width:600px){
 		    .themify_map.tf_map_loaded{width:100%!important}
 		    .ui.builder_button,.ui.nav li a{padding:.525em 1.15em}
 		    .fullheight>.row_inner:not(.tb_col_count_1){min-height:0}
@@ -17,15 +17,40 @@
 <noscript><style>.themify_builder .wow,.wow .tf_lazy{visibility:visible!important}</style></noscript>
 <title>Nord Freeride</title>
 <meta name="robots" content="max-image-preview:large">
-        <style id="tf_lazy_common">.tf_fa{display:inline-block;width:1em;height:1em;stroke-width:0;stroke:currentColor;overflow:visible;fill:currentColor;pointer-events:none;vertical-align:middle;text-rendering:optimizeSpeed;buffered-rendering:static}#tf_svg symbol{overflow:visible}.tf_lazy{position:relative;visibility:visible;display:block;opacity:.3}.wow .tf_lazy{visibility:hidden;opacity:1;position:static;display:inline}div.tf_audio_lazy audio{visibility:hidden;height:0;display:inline}.mejs-container{visibility:visible}.tf_iframe_lazy{transition:opacity .3s ease-in-out;min-height:10px}.tf_carousel .tf_swiper-wrapper{display:flex}.tf_carousel .tf_swiper-slide{flex-shrink:0;opacity:0;width:100%;height:100%}.tf_carousel .tf_lazy{contain:none}.tf_swiper-wrapper>br,.tf_lazy.tf_swiper-wrapper .tf_lazy:after,.tf_lazy.tf_swiper-wrapper .tf_lazy:before{display:none}.tf_lazy:after,.tf_lazy:before{content:'';display:inline-block;position:absolute;width:10px!important;height:10px!important;margin:0 3px;top:50%!important;right:50%!important;left:auto!important;border-radius:100%;background-color:currentColor;visibility:visible;animation:tf-hrz-loader infinite .75s cubic-bezier(.2,.68,.18,1.08)}.tf_lazy:after{width:6px!important;height:6px!important;right:auto!important;left:50%!important;margin-top:3px;animation-delay:-.4s}@keyframes tf-hrz-loader{0%{transform:scale(1);opacity:1}50%{transform:scale(.1);opacity:.6}100%{transform:scale(1);opacity:1}}.tf_lazy_lightbox{position:fixed;background:rgba(11,11,11,.8);color:#ccc;top:0;left:0;display:flex;align-items:center;justify-content:center;z-index:999}.tf_lazy_lightbox .tf_lazy:after,.tf_lazy_lightbox .tf_lazy:before{background:#fff}.tf_w.tf_vd_lazy video{width:100%;height:auto;position:static;object-fit:cover}</style>
+            <style id="tf_lazy_style">[data-tf-src]{
+                    opacity:0
+                }
+                .tf_svg_lazy{
+		    content-visibility:auto;
+                    transition:filter .3s linear!important;filter:blur(25px);opacity:1;
+                    transform:translateZ(0)
+                }
+                .tf_svg_lazy_loaded{
+                    filter:blur(0)
+                }
+                .module[data-lazy],.module[data-lazy] .ui,.module_row[data-lazy]:not(.tb_first),.module_row[data-lazy]:not(.tb_first)>.row_inner,.module_row:not(.tb_first) .module_column[data-lazy],.module_row:not(.tb_first) .module_subrow[data-lazy],.module_subrow[data-lazy]>.subrow_inner{
+
+		    background-image:none!important
+                }</style>
+            <noscript>
+		<style>[data-tf-src]{
+			display:none!important
+		    }
+		    .tf_svg_lazy{
+			filter:none!important;
+			opacity:1!important
+		    }</style>
+	    </noscript>
+                    <style id="tf_lazy_common">.tf_fa{display:inline-block;width:1em;height:1em;stroke-width:0;stroke:currentColor;overflow:visible;fill:currentColor;pointer-events:none;vertical-align:middle;text-rendering:optimizeSpeed;buffered-rendering:static}#tf_svg symbol{overflow:visible}.tf_lazy{position:relative;visibility:visible;display:block;opacity:.3}.wow .tf_lazy{visibility:hidden;opacity:1;position:static;display:inline}div.tf_audio_lazy audio{visibility:hidden;height:0;display:inline}.mejs-container{visibility:visible}.tf_iframe_lazy{transition:opacity .3s ease-in-out;min-height:10px}.tf_carousel .tf_swiper-wrapper{display:flex}.tf_carousel .tf_swiper-slide{flex-shrink:0;opacity:0;width:100%;height:100%}.tf_carousel .tf_lazy{contain:none}.tf_swiper-wrapper>br,.tf_lazy.tf_swiper-wrapper .tf_lazy:after,.tf_lazy.tf_swiper-wrapper .tf_lazy:before{display:none}.tf_lazy:after,.tf_lazy:before{content:'';display:inline-block;position:absolute;width:10px!important;height:10px!important;margin:0 3px;top:50%!important;right:50%!important;left:auto!important;border-radius:100%;background-color:currentColor;visibility:visible;animation:tf-hrz-loader infinite .75s cubic-bezier(.2,.68,.18,1.08)}.tf_lazy:after{width:6px!important;height:6px!important;right:auto!important;left:50%!important;margin-top:3px;animation-delay:-.4s}@keyframes tf-hrz-loader{0%{transform:scale(1);opacity:1}50%{transform:scale(.1);opacity:.6}100%{transform:scale(1);opacity:1}}.tf_lazy_lightbox{position:fixed;background:rgba(11,11,11,.8);color:#ccc;top:0;left:0;display:flex;align-items:center;justify-content:center;z-index:999}.tf_lazy_lightbox .tf_lazy:after,.tf_lazy_lightbox .tf_lazy:before{background:#fff}.tf_w.tf_vd_lazy video{width:100%;height:auto;position:static;object-fit:cover}</style>
         <link rel="prefetch" href="https://nordfreeride.com/wp-content/plugins/themify-builder/themify/css/modules/animate.min.css?ver=7.0.0" as="style">
-<link rel="prefetch" href="https://nordfreeride.com/wp-content/plugins/themify-builder/themify/js/modules/tf_wow.min.js?ver=7.0.0" as="script" fetchpriority="low">
-<link rel="prefetch" href="https://nordfreeride.com/wp-content/plugins/themify-builder/js/modules/accordion.min.js?ver=7.0.0" as="script" fetchpriority="low">
-<link rel="prefetch" href="https://nordfreeride.com/wp-content/plugins/themify-builder/js/modules/feature.min.js?ver=7.0.0" as="script" fetchpriority="low">
-<link rel="preload" href="https://nordfreeride.com/wp-content/plugins/themify-builder/js/themify.builder.script.min.js?ver=7.0.0" as="script" fetchpriority="low">
+<link rel="prefetch" href="https://nordfreeride.com/wp-content/plugins/themify-builder/themify/js/modules/tf_wow.js?ver=7.0.0" as="script" fetchpriority="low">
+<link rel="prefetch" href="https://nordfreeride.com/wp-content/plugins/themify-builder/js/modules/accordion.js?ver=7.0.0" as="script" fetchpriority="low">
+<link rel="prefetch" href="https://nordfreeride.com/wp-content/plugins/themify-builder/js/modules/feature.js?ver=7.0.0" as="script" fetchpriority="low">
+<link rel="preload" href="https://nordfreeride.com/wp-content/plugins/themify-builder/js/themify.builder.script.js?ver=7.0.0" as="script" fetchpriority="low">
+<link rel="preload" href="https://nordfreeride.com/wp-content/uploads/2022/10/Nord-Freeride.png" as="image" fetchpriority="high">
 <style id="tf_gf_fonts_style">@font-face{font-family:'Lato';font-display:swap;src:url(https://fonts.gstatic.com/s/lato/v23/S6uyw4BMUTPHjxAwXjeu.woff2) format('woff2');unicode-range:U+0100-024F,U+0259,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF;}@font-face{font-family:'Lato';font-display:swap;src:url(https://fonts.gstatic.com/s/lato/v23/S6uyw4BMUTPHjx4wXg.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}@font-face{font-family:'Lato';font-weight:900;font-display:swap;src:url(https://fonts.gstatic.com/s/lato/v23/S6u9w4BMUTPHh50XSwaPGR_p.woff2) format('woff2');unicode-range:U+0100-024F,U+0259,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF;}@font-face{font-family:'Lato';font-weight:900;font-display:swap;src:url(https://fonts.gstatic.com/s/lato/v23/S6u9w4BMUTPHh50XSwiPGQ.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}</style>
-<link rel="preload" fetchpriority="high" href="https://nordfreeride.com/wp-content/uploads/themify-concate/959726234/themify-968546138.min.css" as="style">
-<link fetchpriority="high" id="themify_concate-css" rel="stylesheet" href="https://nordfreeride.com/wp-content/uploads/themify-concate/959726234/themify-968546138.min.css">
+<link rel="preload" fetchpriority="high" href="https://nordfreeride.com/wp-content/uploads/themify-concate/959726234/themify-968546138.css" as="style">
+<link fetchpriority="high" id="themify_concate-css" rel="stylesheet" href="https://nordfreeride.com/wp-content/uploads/themify-concate/959726234/themify-968546138.css">
 <link rel="alternate" type="application/rss+xml" title="Nord Freeride &raquo; Feed" href="https://nordfreeride.com/feed/">
 <link rel="alternate" type="application/rss+xml" title="Nord Freeride &raquo; Comments Feed" href="https://nordfreeride.com/comments/feed/">
 <script>
@@ -67,8 +92,8 @@ img.emoji {
 <meta name="generator" content="WordPress 6.1.1">
 <link rel="canonical" href="https://nordfreeride.com/">
 <link rel="shortlink" href="https://nordfreeride.com/">
-<link rel="alternate" type="application/json+oembed" href="https://nordfreeride.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fylberxhambazi.github.io%2Fnord-freeride%2F">
-<link rel="alternate" type="text/xml+oembed" href="https://nordfreeride.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fylberxhambazi.github.io%2Fnord-freeride%2F&#038;format=xml">
+<link rel="alternate" type="application/json+oembed" href="https://nordfreeride.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fnordfreeride.com%2F">
+<link rel="alternate" type="text/xml+oembed" href="https://nordfreeride.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fnordfreeride.com%2F&#038;format=xml">
 	<script>document.documentElement.className = document.documentElement.className.replace( 'no-js', 'js' );</script>
 	<style id="custom-background-css">body.custom-background { background-color: #ffffff; }</style>
 	<link rel="icon" href="https://nordfreeride.com/wp-content/uploads/2022/10/Nord-Freeride-1.png" sizes="32x32">
@@ -162,7 +187,7 @@ div.themify_builder_slider_vertical .carousel-next{
 					<div class="header-titles">
 
 						<div class="site-logo faux-heading">
-<a href="https://nordfreeride.com/" class="custom-logo-link" rel="home" aria-current="page"><img width="323" height="128" src="https://nordfreeride.com/wp-content/uploads/2022/10/Nord-Freeride.png" class="custom-logo" alt="Nord Freeride" decoding="async"></a><span class="screen-reader-text">Nord Freeride</span>
+<a href="https://nordfreeride.com/" class="custom-logo-link" rel="home" aria-current="page"><img data-tf-not-load="1" fetchpriority="high" loading="auto" decoding="sync" width="323" height="128" src="https://nordfreeride.com/wp-content/uploads/2022/10/Nord-Freeride.png" class="custom-logo" alt="Nord Freeride"></a><span class="screen-reader-text">Nord Freeride</span>
 </div>
 					</div>
 <!-- .header-titles -->
@@ -281,16 +306,16 @@ div.themify_builder_slider_vertical .carousel-next{
 	    			<li data-bg="https://nordfreeride.com/wp-content/uploads/2022/10/photo-5-Large.jpeg" data-bg-alt="" class="normal">
 			    <a class="row-slider-dot" data-index="0"></a>
 			</li>
-					<li data-bg="https://nordfreeride.com/wp-content/uploads/2022/10/photo-4-Large.jpeg" data-bg-alt="" class="normal">
+					<li data-bg="https://nordfreeride.com/landing-page/wordpress/wp-content/uploads/2022/10/photo-4-Large.jpeg" data-bg-alt="" class="normal">
 			    <a class="row-slider-dot" data-index="1"></a>
 			</li>
-					<li data-bg="https://nordfreeride.com/wp-content/uploads/2022/10/Pjoto-3-Large.jpeg" data-bg-alt="" class="normal">
+					<li data-bg="https://nordfreeride.com/landing-page/wordpress/wp-content/uploads/2022/10/Pjoto-3-Large.jpeg" data-bg-alt="" class="normal">
 			    <a class="row-slider-dot" data-index="2"></a>
 			</li>
-					<li data-bg="https://nordfreeride.com/wp-content/uploads/2022/10/photo-2-Large.jpeg" data-bg-alt="" class="normal">
+					<li data-bg="https://nordfreeride.com/landing-page/wordpress/wp-content/uploads/2022/10/photo-2-Large.jpeg" data-bg-alt="" class="normal">
 			    <a class="row-slider-dot" data-index="3"></a>
 			</li>
-					<li data-bg="https://nordfreeride.com/wp-content/uploads/2022/10/20220930_155243-Large.jpg" data-bg-alt="" class="normal">
+					<li data-bg="https://nordfreeride.com/landing-page/wordpress/wp-content/uploads/2022/10/20220930_155243-Large.jpg" data-bg-alt="" class="normal">
 			    <a class="row-slider-dot" data-index="4"></a>
 			</li>
 			        </ul>
@@ -468,7 +493,7 @@ div.themify_builder_slider_vertical .carousel-next{
                         <!-- module gallery -->
 <div class="module gallery module-gallery tb_wmhi986 layout-slider rounded bordered " data-lazy="1">
                 <div class="themify_builder_slider_vertical tf_rel">
-    <div class="tf_swiper-container tf_carousel themify_builder_slider themify_builder_slider_vertical tf_rel tf_overflow" data-pager="0" data-lazy="1" data-thumbs="tb_wmhi986_thumbs" data-effect="scroll" data-css_url="https://nordfreeride.com/wp-content/plugins/themify-builder/css/modules/sliders/carousel.css,https://nordfreeride.com/wp-content/plugins/themify-builder/css/modules/sliders/gallery.css" data-speed="1" data-wrapvar="0" data-slider_nav="1" data-height="auto">
+    <div class="tf_swiper-container tf_carousel themify_builder_slider themify_builder_slider_vertical tf_rel tf_overflow" data-pager="0" data-lazy="1" data-thumbs="tb_wmhi986_thumbs" data-effect="scroll" data-css_url="https://nordfreeride.com/landing-page/wordpress/wp-content/plugins/themify-builder/css/modules/sliders/carousel.css,https://nordfreeride.com/landing-page/wordpress/wp-content/plugins/themify-builder/css/modules/sliders/gallery.css" data-speed="1" data-wrapvar="0" data-slider_nav="1" data-height="auto">
 	<div class="tf_swiper-wrapper tf_lazy tf_rel tf_w tf_h tf_textc">
 					<div class="tf_swiper-slide">
 			<div class="slide-inner-wrap" style="margin-left:15px;margin-right:15px">
@@ -903,10 +928,10 @@ div.themify_builder_slider_vertical .carousel-next{
 
 		            <!--googleoff:all-->
             <!--noindex-->
-            <script id="tf_vars" defer src="data:text/javascript;base64,dmFyIHRiTG9jYWxTY3JpcHQgPSB7ImJyZWFrcG9pbnRzIjp7InRhYmxldF9sYW5kc2NhcGUiOls3NjksMTI4MF0sInRhYmxldCI6WzY4MSw3NjhdLCJtb2JpbGUiOjY4MH0sInNjcm9sbEhpZ2hsaWdodCI6eyJzcGVlZCI6OTAwLjAxfSwiYWRkb25zIjp7ImFjY29yZGlvbiI6eyJqcyI6MX0sImdhbGxlcnkiOnsianMiOjF9LCJmZWF0dXJlIjp7ImpzIjoxfX19Owp2YXIgdGhlbWlmeV92YXJzID0geyJkb25lIjp7InRiX3BhcmFsbGF4Ijp0cnVlLCJ0Yl90ZXh0Ijp0cnVlLCJ0Yl9mYW5jeS1oZWFkaW5nIjp0cnVlLCJ0Yl9hY2NvcmRpb24iOnRydWUsInRiX2dhbGxlcnkiOnRydWUsInRiX2FwcCI6dHJ1ZSwidGJfZmVhdHVyZSI6dHJ1ZSwidGJfYnV0dG9ucyI6dHJ1ZSwidGJfY29sb3IiOnRydWUsInRiX2J1dHRvbnNfdmVydGljYWwiOnRydWUsInRiX3N0eWxlIjp0cnVlfSwid3AiOiI2LjEuMSIsImFqYXhfdXJsIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL2xhbmRpbmctcGFnZS93b3JkcHJlc3Mvd3AtYWRtaW4vYWRtaW4tYWpheC5waHAiLCJpbmNsdWRlc1VSTCI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9sYW5kaW5nLXBhZ2Uvd29yZHByZXNzL3dwLWluY2x1ZGVzLyIsIm1lbnVfdG9vbHRpcHMiOltdLCJlbWFpbFN1YiI6IkNoZWNrIHRoaXMgb3V0ISIsIm5vcCI6IkNoZWNrIHRoaXMgb3V0ISIsImxpZ2h0Ym94Ijp7ImkxOG4iOnsidENvdW50ZXIiOiIlY3VyciUgb2YgJXRvdGFsJSJ9fSwic192IjoiNS4zLjkiLCJseiI6IjEiLCJ3cF9lbWJlZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9sYW5kaW5nLXBhZ2Uvd29yZHByZXNzL3dwLWluY2x1ZGVzL2pzL3dwLWVtYmVkLm1pbi5qcyJ9Ow=="></script>
+            <script id="tf_vars" defer src="data:text/javascript;base64,dmFyIHRiTG9jYWxTY3JpcHQgPSB7ImJyZWFrcG9pbnRzIjp7InRhYmxldF9sYW5kc2NhcGUiOls3NjksMTAyNF0sInRhYmxldCI6WzYwMSw3NjhdLCJtb2JpbGUiOjYwMH0sInNjcm9sbEhpZ2hsaWdodCI6eyJzcGVlZCI6OTAwLjAxfSwiYWRkb25zIjp7ImFjY29yZGlvbiI6eyJqcyI6MX0sImdhbGxlcnkiOnsianMiOjF9LCJmZWF0dXJlIjp7ImpzIjoxfX19Owp2YXIgdGhlbWlmeV92YXJzID0geyJkb25lIjp7InRiX3BhcmFsbGF4Ijp0cnVlLCJ0Yl90ZXh0Ijp0cnVlLCJ0Yl9mYW5jeS1oZWFkaW5nIjp0cnVlLCJ0Yl9hY2NvcmRpb24iOnRydWUsInRiX2dhbGxlcnkiOnRydWUsInRiX2FwcCI6dHJ1ZSwidGJfZmVhdHVyZSI6dHJ1ZSwidGJfYnV0dG9ucyI6dHJ1ZSwidGJfY29sb3IiOnRydWUsInRiX2J1dHRvbnNfdmVydGljYWwiOnRydWUsInRiX3N0eWxlIjp0cnVlfSwid3AiOiI2LjEuMSIsImFqYXhfdXJsIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL2xhbmRpbmctcGFnZS93b3JkcHJlc3Mvd3AtYWRtaW4vYWRtaW4tYWpheC5waHAiLCJpbmNsdWRlc1VSTCI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9sYW5kaW5nLXBhZ2Uvd29yZHByZXNzL3dwLWluY2x1ZGVzLyIsIm1lbnVfdG9vbHRpcHMiOltdLCJlbWFpbFN1YiI6IkNoZWNrIHRoaXMgb3V0ISIsIm5vcCI6IkNoZWNrIHRoaXMgb3V0ISIsImxpZ2h0Ym94Ijp7ImkxOG4iOnsidENvdW50ZXIiOiIlY3VyciUgb2YgJXRvdGFsJSJ9fSwic192IjoiNS4zLjkiLCJ3cF9lbWJlZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9sYW5kaW5nLXBhZ2Uvd29yZHByZXNzL3dwLWluY2x1ZGVzL2pzL3dwLWVtYmVkLm1pbi5qcyJ9Ow=="></script>
             <!--/noindex-->
             <!--googleon:all-->
-            <script defer src="https://nordfreeride.com/wp-content/plugins/themify-builder/themify/js/main.min.js?ver=7.0.0" id="themify-main-script-js"></script>
+            <script defer src="https://nordfreeride.com/wp-content/plugins/themify-builder/themify/js/main.js?ver=7.0.0" id="themify-main-script-js"></script>
 <script src="https://nordfreeride.com/wp-content/plugins/contact-form-7/includes/swv/js/index.js?ver=5.6.4" id="swv-js"></script>
 <script id="contact-form-7-js-extra">var wpcf7 = {"api":{"root":"https:\/\/nordfreeride.com\/wp-json\/","namespace":"contact-form-7\/v1"}};</script>
 <script defer src="https://nordfreeride.com/wp-content/plugins/contact-form-7/includes/js/index.js?ver=5.6.4" id="contact-form-7-js"></script>

@@ -2,28 +2,25 @@
  * feature module
  */
 ;
-((Themify) => {
+(Themify => {
     'use strict';
     const style_url=ThemifyBuilderModuleJs.cssUrl+'feature_styles/',
-        sizes={'small':100,'medium':150,large:200},
-        init =(item)=> {
+        sizes={small:100,medium:150,large:200},
+        init =item=> {
             const p=item.closest('.module-feature');
             if(p){
                 const cl = p.classList;
-                if(!Themify.cssLazy['tb_feature_left'] && cl.contains('layout-icon-left')){
-					Themify.cssLazy['tb_feature_left']=true;
-                    Themify.LoadCss(style_url+'left.css');
+                if(cl.contains('layout-icon-left')){
+                    Themify.loadCss(style_url+'left','tb_feature_left');
                 }
-                else if(!Themify.cssLazy['tb_feature_right'] && cl.contains('layout-icon-right')){
-                    Themify.cssLazy['tb_feature_right']=true;
-                    Themify.LoadCss(style_url+'right.css');
+                else if(cl.contains('layout-icon-right')){
+                    Themify.loadCss(style_url+'right','tb_feature_right');
                 }
-                const svgItem=item.getElementsByClassName('tb_feature_stroke')[0],
-                    progress = svgItem?svgItem.getAttribute('data-progress'):null;
+                const svgItem=item.tfClass('tb_feature_stroke')[0],
+                    progress = svgItem?svgItem.dataset.progress:null;
                 if(progress){
-                    if(!Themify.cssLazy['tb_feature_overlay'] && cl.contains('with-overlay-image')){
-                        Themify.cssLazy['tb_feature_overlay']=true;
-                        Themify.LoadCss(style_url+'overlay.css');
+                    if(cl.contains('with-overlay-image')){
+                        Themify.loadCss(style_url+'overlay','tb_feature_overlay');
                     }
                     let w=0;
 					if(!cl.contains('size-custom')){
@@ -35,7 +32,7 @@
 						}
 					}
 					else{
-						w=parseInt(item.style['width']) || 0;
+						w=parseInt(item.style.width) || 0;
 					}
                     if(w===0){
                         w=item.offsetWidth;
@@ -45,18 +42,20 @@
                 }
 
 				if ( p.hasAttribute( 'data-layout-mobile' ) ) {
-					const layout_mobile = p.getAttribute( 'data-layout-mobile' ),
-						layout_desktop = p.getAttribute( 'data-layout-desktop' ),
-						callback = function( e ) {
-							if ( ! e ) {
-								return;
-							}
+					const layout_mobile = p.dataset.layoutMobile,
+						layout_desktop = p.dataset.layoutDesktop,
+						callback = e=> {
+                            const cl=p.classList;
 							if ( e.w > tbLocalScript.breakpoints.mobile ) {
-								p.classList.remove( 'layout-' + layout_mobile );
-								p.classList.add( 'layout-' + layout_desktop );
+								cl.remove( 'layout-' + layout_mobile );
+								cl.add( 'layout-' + layout_desktop );
 							} else {
-								p.classList.remove( 'layout-' + layout_desktop );
-								p.classList.add( 'layout-' + layout_mobile );
+								cl.remove( 'layout-' + layout_desktop );
+								cl.add( 'layout-' + layout_mobile );
+                                const mobile_icon=layout_mobile.replace('icon-','');
+                                if(mobile_icon!=='top'){
+                                    Themify.loadCss(style_url+mobile_icon,'tb_feature_'+mobile_icon);
+                                }
 							}
 						};
 					callback( { w : Themify.w } );
@@ -74,19 +73,13 @@
         },{
             threshold:.9
         });
-   Themify.on('builder_load_module_partial', (el,type,isLazy)=>{
-        let items;
-        if(isLazy===true){
-            if(!el[0].classList.contains('module-feature')){
-                return;
-            }
-            items=[el[0]];
+    Themify.on('builder_load_module_partial', (el,isLazy)=>{
+        if(isLazy===true && !el.classList.contains('module-feature')){
+           return;
         }
-        else{
-            items = Themify.selectWithParent('module-feature',el);
-        }
+        const items = Themify.selectWithParent('module-feature',el);
         for(let i=items.length-1;i>-1;--i){
-            let item=items[i].getElementsByClassName('module-feature-chart-html5')[0];
+            let item=items[i].tfClass('module-feature-chart-html5')[0];
             if(item){
                 observer.observe(item);
             }

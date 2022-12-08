@@ -2,54 +2,54 @@
  * wow module
  */
 ;
-((Themify)=>{
+(Themify=>{
     'use strict';
     let is_working=false;
 	const hoverCallback=function() {
 		if (is_working === false) {
-			is_working = true;
-			const animation = this.style['animationName'],
-				hover=this.getAttribute('data-tf-animation_hover');
-			if (animation) {
-				this.style['animationIterationCount']=this.style['animationDelay']=this.style['animationName'] = '';
-				this.classList.remove(animation);
-			}
-			this.addEventListener('animationend',function(e){
-				this.classList.remove('animated','tb_hover_animate',e.animationName);
-				this.style['animationName'] = '';
-				is_working = false;
-			},{passive:true,once:true});
-			this.style['animationName'] = hover;
-			this.classList.add('animated','tb_hover_animate',hover);
+                    is_working = true;
+                    const st=this.style,
+                        animation = st.animationName,
+                            hover=this.dataset.tfAnimation_hover;
+                    if (animation) {
+                            st.animationIterationCount=st.animationDelay=st.animationName = '';
+                            this.classList.remove(animation);
+                    }
+                    this.tfOn('animationend',function(e){
+                            this.classList.remove('animated','tb_hover_animate',e.animationName);
+                            this.style.animationName = '';
+                            is_working = false;
+                    },{passive:true,once:true});
+                    
+                    st.animationName = hover;
+                    this.classList.add('animated','tb_hover_animate',hover);
 		}
 	},
-	hover=(el)=>{
+	hover=el=>{
 		const ev=Themify.isTouch?'touchstart':'mouseenter',
 		events = [ev,'tf_custom_animate'];
-		for (let i = events.length - 1; i > -1; --i) {
-			el.removeEventListener(events[i], hoverCallback, {passive: true});
-			el.addEventListener(events[i], hoverCallback, {passive: true});
-		}
+		el.tfOff(events, hoverCallback, {passive: true})
+        .tfOn(events, hoverCallback, {passive: true});
 	},
-	animate=function(el) {
-		Themify.imagesLoad(el, (item)=>{
-			item.style['visibility'] = 'visible';
+	animate=el=> {
+		Themify.imagesLoad(el).then(item=>{
+			item.style.visibility = 'visible';
 			if (item.hasAttribute('data-tf-animation')) {
 					if (item.hasAttribute('data-tf-animation_repeat')) {
-							item.style['animationIterationCount'] = item.getAttribute('data-tf-animation_repeat');
+							item.style.animationIterationCount = item.dataset.tfAnimation_repeat;
 					}
 					if (item.hasAttribute('data-tf-animation_delay')) {
-							item.style['animationDelay'] = item.getAttribute('data-tf-animation_delay') + 's';
+							item.style.animationDelay = item.dataset.tfAnimation_delay + 's';
 					}
-					const cl=item.getAttribute('data-tf-animation');
+					const cl=item.dataset.tfAnimation;
 					item.classList.add(cl);
-					item.style['animationName'] = cl;
-					item.addEventListener('animationend', function () {
-						this.style['animationIterationCount']=this.style['animationDelay']='';
+					item.style.animationName = cl;
+					item.tfOn('animationend', function () {
+						this.style.animationIterationCount=this.style.animationDelay='';
 						this.classList.remove('animated',cl);
 						this.removeAttribute('data-tf-animation');
-					}, {passive: true, once: true});
-					item.classList.add('animated');
+					}, {passive: true, once: true})
+                    .classList.add('animated');
 			}
 			if (item.classList.contains('hover-wow')) {
 				hover(item);
@@ -57,32 +57,19 @@
 		});
 	},
 	observer= new IntersectionObserver((entries, _self)=>{
-			for (let i = entries.length - 1; i > -1; --i) {
-				if (entries[i].isIntersecting === true) {
-					_self.unobserve(entries[i].target);
-					animate(entries[i].target);
-				}
-			}
-	}, {
-		threshold: .01
-	}),
-	init=(items)=>{
-		if (items instanceof jQuery) {
-			items = items.get();
-		}	
-		for (let i = items.length - 1; i > -1; --i) {
-			observer.observe(items[i]);
-		}
-	};
-    Themify.on('tf_wow_init',  ( items)=> {
-        if (!Themify.cssLazy['animate']) {
-            Themify.loadAnimateCss(() =>{
-                init(items);
-            });
-        }
-        else {
-            init(items);
-        }
+            for (let i = entries.length - 1; i > -1; --i) {
+                if (entries[i].isIntersecting === true) {
+                    _self.unobserve(entries[i].target);
+                    animate(entries[i].target);
+                }
+            }
+	});
+    Themify.on('tf_wow_init', items=> {
+        Themify.animateCss().then(() =>{
+            for (let i = items.length - 1; i > -1; --i) {
+                observer.observe(items[i]);
+            }
+        });
     });
 
 })(Themify);
