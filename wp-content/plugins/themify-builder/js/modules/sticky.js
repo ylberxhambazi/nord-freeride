@@ -4,22 +4,18 @@
 ;
 ((Themify,win)=>{
     'use strict';
-	let timer,
-	t1,
+	let t1,
 	isDisable=false,
 	vWidth=Themify.w,
 	vHeight=Themify.h,
 	isAdded=false;
 	const map = new Map(),
-		tablet=tbLocalScript['is_sticky']==='m'?parseInt(tbLocalScript.breakpoints.tablet[1]):false,
-		_scroller=function(e,item){
-			if(timer){
-				cancelAnimationFrame(timer);
-			}
+		tablet=tbLocalScript.is_sticky==='m'?parseInt(tbLocalScript.breakpoints.tablet[1]):false,
+		_scroller=item=>{
 			if(isDisable===true){
 				return;
 			}
-				timer = requestAnimationFrame(()=>{
+			requestAnimationFrame(()=>{
 				const offset=win.pageYOffset,
 					items=item?item:map;
 				for (let entry of items) {
@@ -31,10 +27,10 @@
 					}
 					if((opt.isBottom===true && ((offset+vHeight)>=opt.space)) || (opt.isBottom!==true &&offset > opt.space)){
 						if(isFixed===false){
-							el.style['width']= opt.w+'px';
-							el.parentNode.style['height']= opt.h+'px';
-							el.style['position']= 'fixed';
-							el.style['top']= opt.value;
+							el.parentNode.style.height= opt.h+'px';
+							el.style.position= 'fixed';
+							el.style.top= opt.value;
+							el.style.width= opt.w+'px';
 							el.classList.add('tb_sticky_scroll_active');
 						}
 						if(opt.unstick && opt.unstick.item){
@@ -63,7 +59,7 @@
 							if(opt.currentTop!==newTop){
 								opt.currentTop=newTop;
 								map.set(el,opt);
-								el.style['top']=newTop;
+								el.style.top=newTop;
 							}
 						}
 					}
@@ -73,11 +69,12 @@
 				}
 			});
 	},
-	_unsticky=(el)=>{
-		el.style['width']=el.style['top']=el.style['bottom']=el.style['position']=el.parentNode.style['height']= '';
+	_unsticky=el=>{
+        const st=el.style;
+		st.width=st.top=st.bottom=st.position=el.parentNode.style.height= '';
 		el.classList.remove('tb_sticky_scroll_active');
 	},
-    _resize =  (e)=> {
+    _resize =  e=> {
 		if ( ! e ) {
 			return;
 		}
@@ -116,7 +113,7 @@
 		}
 		return found;
 	},
-	mutationObserver = new MutationObserver((mut)=> {
+	mutationObserver = new MutationObserver(mut=> {
 		if (mut[0]) {
 			let t=mut[0].target.closest('[data-sticky-active]');
 			if(t){
@@ -124,12 +121,12 @@
 					cancelAnimationFrame(t1);
 				}
 				t1=requestAnimationFrame(()=>{
-					Themify.imagesLoad(t,(st)=>{
+					Themify.imagesLoad(t).then(st=>{
 						const tmp = new Map();
 						_unsticky(st);
 						_init(st);
 						tmp.set(st,map.get(st));
-						_scroller(null,tmp);
+						_scroller(tmp);
 						t1=null;
 					});
 				});
@@ -166,8 +163,8 @@
                     if('builder'===unstick.type){
 						let tmp=builder.closest('#tbp_header');
                         if(tmp){
-                            tmp=document.getElementById('tbp_content');
-                            tmp=tmp!==null?tmp.getElementsByClassName('themify_builder_content')[0]:document.getElementsByClassName('themify_builder_content')[1];
+                            tmp=document.tfId('tbp_content');
+                            tmp=tmp!==null?tmp.tfClass('themify_builder_content')[0]:document.tfClass('themify_builder_content')[1];
                             if(tmp){
                                 builder=tmp;
                             }
@@ -176,10 +173,10 @@
 					}
 					else{
 						if('row'===unstick.type){
-							unstickItem=builder.getElementsByClassName('tb_'+unstick.el)[0];
+							unstickItem=builder.tfClass('tb_'+unstick.el)[0];
 						}
 						if(!unstickItem){
-							unstickItem=builder.getElementsByClassName('tb_'+unstick.el)[0];
+							unstickItem=builder.tfClass('tb_'+unstick.el)[0];
 						}
 						if(unstickItem){
 							unstick.v=parseInt(unstick.v);
@@ -192,7 +189,7 @@
 				if(!el.parentNode.classList.contains('tb_sticky_wrapper')){
 					const wrapper=document.createElement('div');
 					wrapper.className='tb_sticky_wrapper';
-					el.parentNode.insertBefore(wrapper, el);
+					el.before(wrapper);
 					wrapper.appendChild(el);
 				}
 				map.set(el,opt);
@@ -202,10 +199,10 @@
 				return;
 			}
 			if(isFixed===true){
-				el.style['position']='';
+				el.style.position='';
 			}
 			if(!box){
-				el.style['width']='';
+				el.style.width='';
 				box=el.getBoundingClientRect();
 			}
 			vals.w= box.width>0?box.width:el.offsetWidth;
@@ -215,17 +212,17 @@
 			if(vals.u ==='%' && v!==0){
 				v=(v/100)*vHeight;
 			}
-			if( vals['isBottom']===true){
+			if( vals.isBottom===true){
 				v=vHeight-v-vals.h;
 			}
 			vals.value= v+'px';
-			vals.space= vals['isBottom']!==undefined?(box.bottom+win.pageYOffset+v):(box.top+win.pageYOffset-v);
+			vals.space= vals.isBottom!==undefined?(box.bottom+win.pageYOffset+v):(box.top+win.pageYOffset-v);
 			vals.t=box.top;
-			if(el.parentNode.style['height']!==(vals.h+'px')){
-				el.parentNode.style['height']=vals.h+'px';
+			if(el.parentNode.style.height!==(vals.h+'px')){
+				el.parentNode.style.height=vals.h+'px';
 			}
 			if(isFixed===true){
-				el.style['position']='fixed';
+				el.style.position='fixed';
 			}
 			map.set(el,vals);
 		}
@@ -239,24 +236,23 @@
 	}, {
 		 threshold:[.3,.4,.5,.6,.7,.8,.9,1]
 	});
-    Themify.on('tb_sticky_init',(items)=>{
-        if(items instanceof jQuery){
-            items = items.get();
+    Themify.on('tb_sticky_init',items=>{
+        for (let i = items.length - 1; i > -1; --i) {
+                observer.observe(items[i]);
+                mutationObserver.observe(items[i], {subtree:true,childList:true});
         }
-		for (let i = items.length - 1; i > -1; --i) {
-			observer.observe(items[i]);
-			mutationObserver.observe(items[i], {subtree:true,childList:true});
-		}
-		if(isAdded===false){
-			isAdded=true;
-			if(win.pageYOffset>0){
-				for (let i = items.length - 1; i > -1; --i) {
-					_init(items[i],items[i].getBoundingClientRect());
-				}
-				_scroller();
-			}
-			win.addEventListener('scroll',_scroller,{passive:true});
-		}
+        if(isAdded===false){
+                isAdded=true;
+                if(win.pageYOffset>0){
+                        for (let i = items.length - 1; i > -1; --i) {
+                                _init(items[i],items[i].getBoundingClientRect());
+                        }
+                        _scroller();
+                }
+                win.tfOn('scroll',e=>{
+                    _scroller();
+                },{passive:true});
+        }
     })
     .on('tfsmartresize',_resize);
 

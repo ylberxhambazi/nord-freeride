@@ -28,7 +28,7 @@
 }
 .module_row .row-slider-slides li.row-slider-dot-active a{
     color:#fff;
-    background:transparent;
+    background:0;
     box-shadow:inset 0 0 0 1px, 0 0 0 1px;
 }
 .module_row .row-slider-nav{
@@ -130,44 +130,44 @@
 @keyframes kenburns-top{
     00%{
         transform:scale(1) translateY(0);
-        transform-origin:50% 16%;
+        transform-origin:50% 16%
     }
     to{
         transform:scale(1.25) translateY(-15px);
-        transform-origin:top;
+        transform-origin:top
     }
 }
 @keyframes kenburns-bottom{
     00%{
         transform:scale(1) translateY(0);
-        transform-origin:50% 84%;
+        transform-origin:50% 84%
     }
     to{
         transform:scale(1.25) translateY(15px);
-        transform-origin:bottom;
+        transform-origin:bottom
     }
 }
 @keyframes kenburns-left{
     00%{
         transform:scale(1) translate(0,0);
-        transform-origin:16% 50%;
+        transform-origin:16% 50%
     }
     to{
         transform:scale(1.25) translate(-20px,15px);
-        transform-origin:left;
+        transform-origin:left
     }
 }
 @keyframes kenburns-right{
     00%{
         transform:scale(1) translate(0,0);
-        transform-origin:84% 50%;
+        transform-origin:84% 50%
     }
     to{
         transform:scale(1.25) translateX(20px);
-        transform-origin:right;
+        transform-origin:right
     }
 }
-@media screen and (max-width:680px){
+@media (max-width:680px){
     .module_row .row-slider-arrow:before{
         border-width:1px
     }

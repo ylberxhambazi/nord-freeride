@@ -1,18 +1,39 @@
 /*globals window, document, $, jQuery, _, Backbone */
-(function ($,wp, _) {
+((api,$,wp,doc)=> {
 	'use strict';
 	
-	let builderContent = '';
+	let builderContent = '',
+        timeout;
 	const placeholder = '<!--themify_builder_static--><!--/themify_builder_static-->',
-			patterns = [/<!--themify_builder_static-->([\s\S]*?)<!--\/themify_builder_static-->/gi, /&lt;!--themify_builder_static--&gt;([\s\S]*?)&lt;!--\/themify_builder_static--&gt;/gi, /&amp;lt;!--themify_builder_static--&amp;gt;([\s\S]*?)&amp;lt;!--\/themify_builder_static--&amp;gt;/gi],
-		main_editor = !themifyBuilder.short_badge?'content':'excerpt';
+			patterns = [/\<\!--themify_builder_static--\>([\s\S]*?)<!--\/themify_builder_static--\>/gi, /\&lt;\!--themify_builder_static--\&gt;([\s\S]*?)\&lt;\!--\/themify_builder_static--\&gt;/gi, /\&amp;lt;\!--themify_builder_static--\&amp;gt;([\s\S]*?)\&amp;lt;\!--\/themify_builder_static--\&amp;gt;/gi],
+		main_editor = !themifyBuilder.short_badge?'content':'excerpt',
+        replaceAll=(str,replace)=>{
+            if(str){
+                for(let i=0,l=patterns.length;i<l;++i){
+                    str=str.replaceAll(patterns[i],replace);
+                }
+            }
+            else{
+                str='';
+            }
+            return str;
+        };
 		
 	
 	wp.mce.views.register( 'tb_static_badge', {
 		template: wp.media.template( 'tb-static-badge' ),
-		bindNode( editor, node ) {
-			$(node).on('click', '.tb_mce_view_frontend_btn', this.goToFront)
-			.on('click', '.tb_mce_view_backend_btn', this.goToBack);
+		bindNode( e, node ) {
+            node.addEventListener(Themify.click,e=>{
+                const target=e.target.closest('.tb_mce_view_frontend_btn,.tb_mce_view_backend_btn');
+                if(target){
+                    if(target.classList.contains('tb_mce_view_frontend_btn')){
+                        this.goToFront();
+                    }
+                    else{
+                        Themify.trigger('tb_scroll_to_builder');
+                    }
+                }
+            });
 		},
 		getContent() {
 			return this.template({});
@@ -30,18 +51,15 @@
 		View: {
 			className: 'tb_static_badge',
 			template: wp.media.template( 'tb-static-badge' ),
-			getHtml: function() {
+			getHtml() {
 				return this.template({});
 			}
 		},
-		edit( node ) {
+		edit() {
 			this.goToFront();
 		},
 		goToFront(){
-			$( '#tb_switch_frontend' ).trigger( 'click' );
-		},
-		goToBack() { 
-			tb_app._backendBuilderFocus();
+           Themify.triggerEvent(doc.tfClass('tb_switch_frontend')[0],Themify.click);
 		},
 		contentPlaceholder( content ) {
 			builderContent = builderContent || content;
@@ -56,18 +74,20 @@
 			if(content){
 				content=content.trim();
 			}
-			if( typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor && tinyMCE.activeEditor.id===main_editor) {
-				if( tinyMCE.activeEditor.hidden ) {
-					if(content!==$('#'+main_editor).val().trim()){
-						$('#'+main_editor).val(content);
-					}
+            const tmc=typeof tinyMCE !== 'undefined'?tinyMCE.get(main_editor):null;
+			if( tmc) {
+				if( tmc.hidden ) {
+                    let el=doc.tfId(main_editor);
+                    if(el && el.value.trim()!==content){
+                       el.value=content;
+                    }
 				} 
-				else if(content!==editor.getContent().trim()){
-					editor.setContent( content );
+				else if(content!==tmc.getContent().trim()){
+					tmc.setContent( content );
 				}
 			} 
-			else if(content!==editor.val().trim()) {
-				editor.val(content);
+			else if(content!==editor.value.trim()) {
+				editor.value=content;
 			}
 		},
 		isMatch( content ) {
@@ -75,7 +95,7 @@
 		}
 	};
 
-	$(document).on('tinymce-editor-init', function( event, editor ) {
+	$(doc).on('tinymce-editor-init', ( e, editor )=> {
 		if (editor.wp && editor.wp._createToolbar) {
 			const toolbar = editor.wp._createToolbar([
 				'wp_view_edit'
@@ -83,52 +103,46 @@
 
 			if (toolbar) {
 				//this creates the toolbar
-				editor.on('wptoolbar', function (event) {
-					if (editor.dom.hasClass(event.element, 'wpview') && 'tb_static_badge' === editor.dom.getAttrib( event.element, 'data-wpview-type')) {
-						event.toolbar = toolbar;
+				editor.on('wptoolbar', e=> {
+					if (editor.dom.hasClass(e.element, 'wpview') && 'tb_static_badge' === editor.dom.getAttrib( e.element, 'data-wpview-type')) {
+						e.toolbar = toolbar;
 					}
 				});
 			}
 		}
 		if(editor.id!==main_editor){
-			const content = editor.getContent();
-			let match = wp.mce.views._tb_static_content.isMatch( content );
-			if ( !_.isNull( match ) ) {
-				editor.setContent( content.replace( match[0], '' ) );
-			}
+			const content = replaceAll(editor.getContent(),'');
 		}else{
 			editor.setContent( wp.mce.views.setMarkers( editor.getContent() ) );
 		}
 
-		editor.on('beforesetcontent', function( e ) {
+		editor.on('beforesetcontent', e=> {
 			e.content = wp.mce.views.setMarkers( e.content );
 		});
 	});
 
-	$('body').on('themify_builder_save_data', function( e, jqxhr ){
-		if (themifyBuilder.is_gutenberg_editor  || !jqxhr.data || !jqxhr.data.static_content ){
+	Themify.on('themify_builder_save_data', jqxhr=>{
+		if (themifyBuilder.is_gutenberg_editor  || !jqxhr.builder_data || !jqxhr.static_content ){
 			return true;
 		}
 
-		let editor,content,match=null;
-		if( typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor && tinyMCE.activeEditor.id===main_editor ) {
-			editor = tinyMCE.activeEditor;
-			content = false === tinyMCE.activeEditor.hidden ? tinyMCE.activeEditor.getContent() : tinymce.DOM.get(main_editor).value;
-			match = wp.mce.views._tb_static_content.isMatch( content );
-		} else {
-			editor = $('#'+main_editor);
-			if ( ! editor.length ) {
+		let editor=typeof tinyMCE !== 'undefined'?tinyMCE.get(main_editor):null,
+        content=null;
+		if( editor) {
+			content = !editor.hidden ? editor.getContent() : tinymce.DOM.get(main_editor).value;
+		} 
+        else {
+			editor = doc.tfId(main_editor);
+			if ( ! editor ) {
 				return;
 			}
-			content = editor.val();
-			match = wp.mce.views._tb_static_content.isMatch( content );
+			content = editor.value;
 		}
-
-		if ( _.isNull( match ) ) {
-			wp.mce.views._tb_static_content.setContent( editor, content + jqxhr.data.static_content );
-		} else {
-			wp.mce.views._tb_static_content.setContent( editor, content.replace( match[0], jqxhr.data.static_content ) );
-		}
+        if(content!==null){
+            const match = wp.mce.views._tb_static_content.isMatch( content ),
+                v=match?replaceAll(content,jqxhr.static_content):(content + jqxhr.static_content);
+            wp.mce.views._tb_static_content.setContent( editor, v);
+        }
 	});
 
 	// YOAST SEO
@@ -136,7 +150,7 @@
 		timeout:null,
 		// Initialize
 		init() {
-			$(window).on('YoastSEO:ready', function () {
+			$(window).on('YoastSEO:ready', ()=>{
 				yoastReadBuilder.load();
 			});
 		},
@@ -169,10 +183,10 @@
 		},
 		// Update the YoastSEO result. Use debounce technique, which triggers only when keys stop being pressed.
 		update() {
-			if(this.timeout ){
-				clearTimeout(this.timeout );
+			if(timeout ){
+				clearTimeout(timeout );
 			}
-			this.timeout = setTimeout( function () {
+			timeout = setTimeout(  ()=> {
 				YoastSEO.app.refresh();
 			}, 250 );
 		}
@@ -181,4 +195,4 @@
 	//$( yoastReadBuilder.init );
 	yoastReadBuilder.init();
 
-}(jQuery,wp, _));
+})(tb_app,jQuery,wp,document);

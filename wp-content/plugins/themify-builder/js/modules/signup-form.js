@@ -8,24 +8,18 @@
     Themify.body.on( 'submit.tb_signup', '.tb_signup_form', function ( e ) {
         e.preventDefault();
         const $this = $( this ),
-            $btn = $this.find('button');
+            $btn = $this.find('button'),
+            ajaxData={
+                nonce: $this.find('input[name="nonce"]').val(),
+                action:'tb_signup_process',
+                data:$this.serialize()
+            };
         $btn.prop('disabled', true);
-        $.ajax( {
-            type: 'POST',
-            url: themify_vars.ajax_url,
-            data: {
-                dataType : 'json',
-                action : 'tb_signup_process',
-                nonce : $this.find('input[name="nonce"]').val(),
-                data: $this.serialize()
-            },
-            beforeSend(){
                 $this.find('.tb_signup_errors').removeClass('tb_signup_errors').empty();
                 $this.find('.tb_signup_success').hide();
-            },
-            success( resp ) {
+        Themify.fetch(ajaxData).then(resp=>{
                 if (resp.err ) {
-                    const errWrapper = $this[0].getElementsByClassName('tb_signup_messages')[0];
+                const errWrapper = this.tfClass('tb_signup_messages')[0];
                         errWrapper.classList.add('tb_signup_errors');
                     for(let i = resp.err.length-1;i>-1;--i){
                         let err = document.createElement('div');
@@ -36,22 +30,23 @@
                     $this.find('.tb_signup_success').fadeIn();
                     const redirect = $this.find('input[name="redirect"]');
                     if(redirect[0]){
-                        const url = redirect.val();
+                        const url = redirect.val(),
+                            loc=window.location;
                         if(''!== url){
-                            window.location.href = url;
+                            loc.href = url;
                         }else{
-                            window.location.reload(true);
+                            loc.reload(true);
                         }
-                    }else{
-                        $this[0].reset();
+                    }
+                    else{
+                        this.reset();
                     }
                 }
                 Themify.scrollTo($this.offset().top-100);
-            },
-            complete() {
+        })
+        .finally(()=>{
                 $btn.prop('disabled', false);
-            }
-        } );
+        });
     } );
 
 })(jQuery,Themify);

@@ -5,16 +5,16 @@
 (($,doc,Themify)=> {
     'use strict';
     
-    const isNumber = (number)=>{
+    const isNumber = number=>{
         return number && !isNaN(parseFloat(number)) && isFinite(number);
     },
     setCookie = (name, value, days)=>{
-        var date = new Date();
+        const date = new Date();
         date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
 
-        doc.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+        doc.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';SameSite=strict;path=/';
     },
-    getCookie = (name)=> {
+    getCookie = name=> {
         name = name + '=';
         const ca = doc.cookie.split(';');
         for (let i = 0, len = ca.length; i < len; ++i) {
@@ -28,13 +28,13 @@
         }
         return '';
     },
-    closeAlert = (btn) =>{
+    closeAlert = btn=>{
         const speed = 400;
         let buttonMessage,
             alertBox;
 
         if (btn) {
-            buttonMessage = btn.getAttribute('data-alert-message');
+            buttonMessage = btn.dataset.alertMessage;
             alertBox = buttonMessage ? btn.closest('.alert-inner') : btn.closest('.module-alert');
         } else {
             alertBox = btn;
@@ -49,15 +49,15 @@
             }
         });
     };
-    Themify.on('builder_load_module_partial',(el,type,isLazy)=>{
-        if(isLazy===true && !el[0].classList.contains('module-alert')){
+    Themify.on('builder_load_module_partial',(el,isLazy)=>{
+        if(isLazy===true && !el.classList.contains('module-alert')){
             return;
         }
         const items = Themify.selectWithParent('module-alert',el);
         for(let i=items.length-1;i>-1;--i){
-            let alertID = items[i].getAttribute('data-module-id'),
-                alertLimit =items[i].getAttribute('data-alert-limit'),
-                autoClose = items[i].getAttribute('data-auto-close');
+            let alertID = items[i].dataset.moduleId,
+                alertLimit =items[i].dataset.alertLimit,
+                autoClose = items[i].dataset.alertClose;
 
             if ( isNumber( alertLimit ) ) {
                 let currentViews = parseInt(getCookie( alertID )) || 0;

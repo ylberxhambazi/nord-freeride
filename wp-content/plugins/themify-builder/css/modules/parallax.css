@@ -1,0 +1,11 @@
+@media (hover:hover){
+	.themify_builder .builder-parallax-scrolling{
+		background-size:cover
+	}
+}
+@media(hover:none){
+	/* for touch devices */
+	.themify_builder .builder-parallax-scrolling{
+		background-attachment:scroll!important
+	}
+}

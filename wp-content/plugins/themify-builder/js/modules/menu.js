@@ -8,8 +8,8 @@
     const style_url = ThemifyBuilderModuleJs.cssUrl + 'menu_styles/',
             overlay = doc.createElement('div'),
             isActive = Themify.is_builder_active,
-            loadMobileCss = (callback)=> {
-                Themify.LoadCss(style_url + 'mobile.css', null, null, null, callback);
+            loadMobileCss = ()=> {
+                return Themify.loadCss(style_url + 'mobile');
             },
             toggleCallback = (link, icon)=>{
                 const st = link.nextElementSibling.style;
@@ -18,7 +18,7 @@
             },
             closeMenu = ()=> {
                 overlay.classList.remove('body-overlay-on');
-                Themify.body.removeClass('menu-module-left menu-module-right');
+                doc.body.classList.remove('menu-module-left','menu-module-right');
                 const mobile_menu = $('.mobile-menu-module.visible').removeClass('left right');
                 setTimeout(()=>{
                     mobile_menu.removeClass('visible');
@@ -26,26 +26,20 @@
             },
             init = (isResize, items, windowWidth)=> {
                 for (let i = items.length - 1; i > -1; --i) {
-                    let breakpoint = parseInt(items[i].getAttribute('data-menu-breakpoint'));
-                    if (!Themify.cssLazy['tb_menu_dropdown'] && items[i].classList.contains('dropdown')) {
-                        Themify.cssLazy['tb_menu_dropdown'] = true;
-                        Themify.LoadCss(style_url + 'dropdown.css');
+                    let breakpoint = parseInt(items[i].getAttribute('data-menu-breakpoint')),
+                        tmp = items[i].tfClass('nav')[0];
+                    if (items[i].classList.contains('dropdown')) {
+                        Themify.loadCss(style_url + 'dropdown','tb_menu_dropdown');
                     }
-                    if (!Themify.cssLazy['tb_menu_transparent'] || !Themify.cssLazy['tb_menu_vertical'] || !Themify.cssLazy['tb_menu_fullwidth']) {
-                        let tmp = items[i].getElementsByClassName('nav')[0];
-                        if (tmp) {
-                            if (!Themify.cssLazy['tb_menu_transparent'] && tmp.classList.contains('transparent')) {
-                                Themify.cssLazy['tb_menu_transparent'] = true;
-                                Themify.LoadCss(style_url + 'transparent.css');
-                            }
-                            let type = tmp.classList.contains('fullwidth') ? 'fullwidth' : (tmp.classList.contains('vertical') ? 'vertical' : '');
-                            if (type !== '' && !Themify.cssLazy['tb_menu_' + type]) {
-                                Themify.cssLazy['tb_menu_' + type] = true;
-                                Themify.LoadCss(style_url + type + '.css');
-                                if ('vertical' === type && items[i].getElementsByClassName('tf_acc_menu').length === 0) {
-                                    Themify.cssLazy['tb_menu_acc'] = true;
-                                    Themify.LoadCss(style_url + 'accordion.css');
-                                }
+                    if (tmp) {
+                        if (tmp.classList.contains('transparent')) {
+                            Themify.loadCss(style_url + 'transparent','tb_menu_transparent');
+                        }
+                        let type = tmp.classList.contains('fullwidth') ? 'fullwidth' : (tmp.classList.contains('vertical') ? 'vertical' : '');
+                        if (type !== '') {
+                            Themify.loadCss(style_url + type,'tb_menu_' + type);
+                            if ('vertical' === type && !items[i].tfClass('tf_acc_menu')[0]) {
+                                Themify.loadCss(style_url + 'accordion','tb_menu_accordion');
                             }
                         }
                     }
@@ -53,7 +47,7 @@
                         items[i].classList.toggle('module-menu-mobile-active',windowWidth < breakpoint);
                     }
                     
-                    if (items[i].getElementsByClassName('tf_acc_menu')[0]===undefined) {
+                    if (items[i].tfClass('tf_acc_menu')[0]===undefined) {
                         setTimeout(()=> {
                             Themify.edgeMenu(items[i]);
                         }, 1500);
@@ -65,7 +59,7 @@
                                 breakpoint = menuBurger.parent().data('menu-breakpoint'),
                                 style = menuBurger.parent().data('menu-style');
                         if (style === 'mobile-menu-dropdown' && menuBurger.length && windowWidth < breakpoint) {
-                            Themify.body.on('click', (e)=> {
+                            doc.body.tfOn('click',e=> {
                                 const $target = $(e.target),
                                         menuContainer = $('.module-menu-container');
                                 if (!$target.closest('.module-menu-container').length && menuContainer.is(':visible') && !$target.closest('.menu-module-burger').length && menuBurger.is(':visible')) {
@@ -80,30 +74,29 @@
                 }
             };
     setTimeout( ()=> {
-        Themify.LoadCss(style_url + 'hidden.css');
+        Themify.loadCss(style_url + 'hidden');
     }, 800);
-    Themify.on('builder_load_module_partial', (el,type,isLazy)=>{
-        if(isLazy===true && !el[0].classList.contains('module-menu')){
+    Themify.on('builder_load_module_partial', (el,isLazy)=>{
+        if(isLazy===true && !el.classList.contains('module-menu')){
             return;
         }
         const items = Themify.selectWithParent('module-menu',el);
         init(false, items, Themify.w);
-        
     });
     if (!isActive) {
         const builder = doc.createElement('div'),
-                link = doc.createElement('link');
+                link = doc.createElement('link'),
+                isMin=Themify.is_min===true?'.min':'';
         link.rel = 'prefetch';
         link.setAttribute('as', 'style');
-        link.href = style_url + 'mobile.css';
+        link.href = style_url + 'mobile'+isMin+'.css';
         builder.className = 'themify_builder';
         overlay.classList.add('body-overlay');
         builder.appendChild(overlay);
-        Themify.body[0].appendChild(builder);
-        Themify.body[0].appendChild(link);
+        doc.body.append(builder,link);
         Themify.body.on('click', '.menu-module-burger', function (e) {
             e.preventDefault();
-            loadMobileCss( ()=> {
+            loadMobileCss().then(()=> {
                 const $parent = $(this).parent(),
                         elStyle = $parent.data('menu-style');
                 if (elStyle === 'mobile-menu-dropdown') {
@@ -141,7 +134,7 @@
                     if (menuContent.find('ul').length) {
                         menuContent.find('ul').prev('a').append('<i class="toggle-menu"></i>');
                     }
-                    Themify.body.addClass('menu-module-' + menuDirection);
+                    doc.body.classList.add('menu-module-' + menuDirection);
                     Themify.lazyScroll(menuContent[0].querySelectorAll('[data-lazy]'), true);
                     mobile_menu
                             .html(menuContent)
@@ -158,19 +151,19 @@
                 .on('click', '.mobile-menu-module ul .toggle-menu', function (e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    loadMobileCss( ()=>{
+                    loadMobileCss().then(()=>{
                         toggleCallback(this.closest('a'),this);
                     });
                 }).on('click', '.mobile-menu-module ul a[href="#"]', function (e) {
             e.preventDefault();
             const linkIcon = this.querySelector('.toggle-menu');
             if (linkIcon !== null) {
-                loadMobileCss( ()=> {
+                loadMobileCss().then(()=>{
                     toggleCallback(this, linkIcon);
                 });
             }
         })
-                .on('click', '.themify_builder .body-overlay,.mobile-menu-module .menu-close,.mobile-menu-module .menu-item a', (e)=>{
+                .on('click', '.themify_builder .body-overlay,.mobile-menu-module .menu-close,.mobile-menu-module .menu-item a', e=>{
                     const target = e.target;
                     if (target.classList.contains('toggle-menu') || (target.tagName==='A' && target.getAttribute('href') === '#')) {
                         return;
@@ -178,11 +171,11 @@
                     if (target.classList.contains('menu-close-inner') || (target.parentNode.classList.contains('menu-close'))) {
                         e.preventDefault();
                     }
-                    loadMobileCss(closeMenu);
+                    loadMobileCss().then(closeMenu);
                 });
     }
 
-    Themify.on('tfsmartresize', (e)=>{
+    Themify.on('tfsmartresize', e=>{
         if (e) {
             init(true, doc.querySelectorAll('.module-menu.module'), e.w);
         }

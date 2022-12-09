@@ -4,8 +4,9 @@
 ;
 (($,Themify)=>{
     'use strict';
-    Themify.LoadCss(ThemifyBuilderModuleJs.cssUrl+'more-text.css')
-    .body.on('click', '.module-text-more', function (e) {
+    Themify.loadCss(ThemifyBuilderModuleJs.cssUrl+'more-text');
+    
+    Themify.body.on('click', '.module-text-more', function (e) {
         e.preventDefault();
         const more_link = $(this),
             more_text = more_link.parent().find( '.more-text' ),

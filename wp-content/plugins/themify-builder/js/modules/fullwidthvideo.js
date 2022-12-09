@@ -5,21 +5,11 @@
 ((Themify, doc) => {
     'use strict';
             const is_mobile = Themify.device==='mobile',
-			videoParams=(el)=>{
-				return {'mute':'unmute' !==el.getAttribute('data-mutevideo'), 'loop':'unloop' !==el.getAttribute('data-unloopvideo')};
+			videoParams=el=>{
+				return {mute:'unmute' !==el.dataset.mutevideo, loop:'unloop' !==el.dataset.unloopvideo};
 			}, 
-			loadCss=(callback)=>{
-				if(!Themify.cssLazy['tb_fullwidth_video']){
-					Themify.LoadCss(ThemifyBuilderModuleJs.cssUrl + 'fullwidthvideo.css',null, null, null, ()=>{
-						Themify.cssLazy['tb_fullwidth_video']=true;
-						if(callback){
-							callback();
-						}
-					});
-				}
-				else{
-					callback();
-				}
+			loadCss=()=>{
+                return Themify.loadCss(ThemifyBuilderModuleJs.cssUrl + 'fullwidthvideo','tb_fullwidth_video');
             },
 			getVideo=(id,src,type,autoplay)=>{
 				const bigV = doc.createElement('div'),
@@ -32,7 +22,7 @@
 				iframe.id = id;
 				iframe.src = encodeURI(src);
 				if(autoplay){
-					iframe.setAttribute('data-autoplay', true);
+					iframe.dataset.autoplay=true;
 					iframe.setAttribute('allow','autoplay');
 				}
 				iframe.setAttribute('unselectable','on');
@@ -48,12 +38,12 @@
 				if (params.loop) {
 					src += '&loop=1';
 				}
-				if (params['autoplay']!==false) {
+				if (params.autoplay!==false) {
 					src += '&autoplay=1';
-					params['mute'] = true;
+					params.mute = true;
 					autoplay=true;
 				}
-				if (params['mute'] === true) {
+				if (params.mute === true) {
 					src += '&muted=1';
 				}
 				if(urlparams.hash && urlparams.hash.indexOf('#t=')===0){
@@ -61,7 +51,7 @@
 				}
 				const wrapper= getVideo(player_id,src,'vimeo',autoplay),
 					ifr=wrapper.firstChild,
-					message=(ev)=>{
+					message=ev=>{
 						if (ev.origin.indexOf('player.vimeo.com')!==-1 && ifr && ifr.contentWindow) {
 							const data = JSON.parse(ev.data);
 							if(player_id===data.player_id){
@@ -69,62 +59,97 @@
 										const target='https://player.vimeo.com';
 										ifr.contentWindow.postMessage(
 										  JSON.stringify({
-											'method': 'getVideoWidth'
+											method: 'getVideoWidth'
 										  }
 										),target);
 										ifr.contentWindow.postMessage(
 										  JSON.stringify({
-											'method': 'getVideoHeight'
+											method: 'getVideoHeight'
 										  }
 										),target);
 								}
 								else if(data.method==='getVideoWidth' || data.method==='getVideoHeight'){
 									if(data.method==='getVideoWidth'){
-										ifr.setAttribute('width',data.value);
+										ifr.width=data.value;
 									}
 									else{
-										ifr.setAttribute('height',data.value);
+										ifr.height=data.value;
 									}
-									const w=ifr.getAttribute('width'),
-										h=ifr.getAttribute('height');
+									const w=ifr.width,
+										h=ifr.height;
 									if(h && w){
-										window.removeEventListener('message', message,{passive:true});
-										ifr.style['minHeight']=parseFloat(h/w)*100+'vw';
-										ifr.style['minWidth']=parseFloat(w/h)*100+'vh';
+										window.tfOff('message', message,{passive:true});
+										ifr.style.minHeight=parseFloat(h/w)*100+'vw';
+										ifr.style.minWidth=parseFloat(w/h)*100+'vh';
 										ifr.parentNode.classList.remove('tf_lazy');
 									}
 								}
 							}
 						}
 				};
-				window.addEventListener('message', message,{passive:true});
+				window.tfOn('message', message,{passive:true});
 				return wrapper;
             },
+			showLowPowerControls =el=>{
+				el.classList.add('tb_fullwidth_lowpower');
+				doc.body.tfOn(Themify.click,e=>{
+					const videos=doc.tfClass('tb_fullwidth_lowpower');
+					for(let i=videos.length-1;i>-1;--i){
+						try{
+							playLocalVideo(videos[i]);
+						}
+						catch(e){
+							
+						}
+					}
+				},{passive:true,once:true});
+			},
+			playLocalVideo=async el=>{
+				if(el.paused){
+						try{
+							await el.play();
+						}
+						catch(e){
+							if(!el.muted){
+								el.muted = true;
+								await el.play();
+							}
+							else{
+								throw e;
+							}
+						}  
+					}
+			},
 			local=(el,url)=>{
-				if (is_mobile === false  || 'play' === el.getAttribute('data-playonmobile')) {
-					const params = is_mobile === true ? {loop: 'unloop' !== el.getAttribute('data-unloopvideo'), mute: true} : videoParams(el),
+				if (is_mobile === false  || 'play' === el.dataset.playonmobile) {
+					const params = is_mobile === true ? {loop: 'unloop' !== el.dataset.unloopvideo, mute: true} : videoParams(el),
 						wrap = doc.createElement('div'),
 						videoEl = doc.createElement('video');
 					wrap.className = 'tb_fullwidth_video tb_local_video tf_abs tf_w tf_h';
 					videoEl.className = 'tf_w tf_h';
 					videoEl.setAttribute('type', 'video/'+url.split('.').pop().split('?')[0]);
 					videoEl.preload = 'auto';
-					if(el.dataset['autoplay']==='no'){
-						params['autoplay']=false;
-					}else{
-						videoEl.setAttribute('data-autoplay', true);
-					}
 					videoEl.setAttribute('webkit-playsinline', 1);
 					videoEl.setAttribute('playsinline', true);
 					videoEl.src = url;
-					if (params['autoplay'] !== false) {
-						videoEl.autoplay = true;
-						params['mute'] = true;
+					if (params.autoplay !== false && el.dataset.autoplay!=='no') {
+						params.mute = videoEl.autoplay=true;
+                        setTimeout(async()=>{
+							try{
+								await playLocalVideo(videoEl);
+								if(videoEl.paused){
+									throw '';
+								}
+							}
+							catch(e){
+								showLowPowerControls(videoEl);
+							}
+                        },50);
 					}
-					if (params['mute'] === true) {
+					if (params.mute === true || Themify.device!=='desktop') {
 						videoEl.muted = true;
 					}
-					if (params['loop'] === true) {
+					if (params.loop === true) {
 						videoEl.loop = true;
 					}
 					wrap.appendChild(videoEl);
@@ -144,12 +169,12 @@
 					if(params.loop){
 						src+='&loop=1';
 					}
-					if (params['autoplay']!==false) {
+					if (params.autoplay!==false) {
 						src += '&autoplay=1';
-						params['mute'] = true;
+						params.mute = true;
 						autoplay=true;
 					}
-					if (params['mute'] === true) {
+					if (params.mute === true) {
 						src += '&mute=1';
 					}
 					if(urlparams){
@@ -168,34 +193,34 @@
 					}
 				const wrapper= getVideo(player_id,src,'ytb',autoplay),
 					ifr=wrapper.firstChild;
-					ifr.style['minHeight']=parseFloat(h/w)*100+'vw';
-					ifr.style['minWidth']=parseFloat(w/h)*100+'vh';
-					ifr.addEventListener('load',function(){
+					ifr.style.minHeight=parseFloat(h/w)*100+'vw';
+					ifr.tfOn('load',function(){
 						this.parentNode.classList.remove('tf_lazy');
-					},{passive:true,once:true});
+					},{passive:true,once:true})
+                    .style.minWidth=parseFloat(w/h)*100+'vh';
 					
 					return wrapper;
 				
 				}
 			};
-    Themify.on('builder_load_module_partial',(el,type,isLazy)=>{
+    Themify.on('builder_load_module_partial',(el,isLazy)=>{
         let items;
         if(isLazy===true){
-            if(!el[0].hasAttribute('data-tbfullwidthvideo')){
+            if(!el.hasAttribute('data-tbfullwidthvideo')){
                 return;
             }
-            items=[el[0]];
+            items=[el];
         }
         else{
             items = Themify.selectWithParent('[data-tbfullwidthvideo]',el);
         }
         if(items[0]!==undefined){
-            loadCss(()=>{
+            loadCss().then(()=>{
                 for (let i = items.length - 1; i > -1; --i) {
-                    let url = items[i].getAttribute('data-tbfullwidthvideo');
+                    let url = items[i].dataset.tbfullwidthvideo;
                     if (url) {
                         let provider = Themify.parseVideo(url),
-                            exist = items[i].getElementsByClassName('tb_fullwidth_video')[0],
+                            exist = items[i].tfClass('tb_fullwidth_video')[0],
                             el=null;
                         if (exist && exist.parentNode === items[i]) {
                             items[i].removeChild(exist);
@@ -210,7 +235,7 @@
                             el=local(items[i],url);
                         }
                         if(el){
-                            items[i].insertBefore(el, items[i].firstChild);
+                            items[i].prepend(el);
                             Themify.trigger('tb_fullwidth_video_added',[items[i]]);
                         }
                     }

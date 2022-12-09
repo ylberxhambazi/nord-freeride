@@ -2,18 +2,17 @@
  * social share module
  */
 ;
-(($,Themify)=>{
+(Themify=>{
     'use strict';
-    Themify.body.on('click.tb_share', '.module-social-share a', function (e) {
-        e.preventDefault();
-        const $this = $(this),
-            $el = $this.closest('.module-social-share');
-        if($el[0]){
-            let url = $el.attr('data-url');
-            const type = 'A' === $this[0].tagName ? $this[0].dataset.type : $this[0].parentNode.dataset.type;
-            url = '' !== url ? url : window.location.href;
-            Themify.sharer(type,url,$this.attr('data-title'));
+    document.body.tfOn('click',  e=> {
+        const target=e.target,
+            el = target?target.closest('.module-social-share'):null;
+        if(el){
+            e.preventDefault();
+            const url = el.dataset.url || window.location.href,
+            type = 'A' === target.tagName ? target.dataset.type : target.parentNode.dataset.type;
+            Themify.sharer(type,url,target.dataset.title);
         }
     });
 
-})(jQuery,Themify);
+})(Themify);

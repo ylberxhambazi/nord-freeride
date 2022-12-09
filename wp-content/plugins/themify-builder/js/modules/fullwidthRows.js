@@ -30,25 +30,23 @@
         if (outherWith === 0) {
             return;
         }
-       const tablet = vars.breakpoints.tablet,
-            tablet_landscape = vars.breakpoints.tablet_landscape,
-            mobile = vars.breakpoints.mobile,
+       const points=vars.breakpoints,
             width = doc.documentElement.clientWidth,
             f=doc.createDocumentFragment();
             let type = 'desktop';
-            if (width <= mobile) {
+            if (width <= points.mobile) {
                 type = 'mobile';
             }
-            else if (width <= tablet[1]) {
+            else if (width <= points.tablet[1]) {
                 type = 'tablet';
             }
-            else if (width <= tablet_landscape[1]) {
+            else if (width <= points.tablet_landscape[1]) {
                 type = 'tablet_landscape';
             }
             for (let i =items.length-1; i >-1; --i) {
                     if(!isTrigger && !isActive && resize===false){
                             if(!items[i].hasAttribute('data-fullwidth-done')){
-								items[i].setAttribute('data-fullwidth-done',true);
+								items[i].dataset.fullwidthDone=1;
                             }
                             else{
 								continue;
@@ -139,7 +137,7 @@
                 }
 
                 if (isActive) {
-                    items[i].style['paddingRight'] = items[i].style['paddingLeft'] = items[i].style['marginRight'] = items[i].style['marginLeft'] = '';
+                    items[i].style.paddingRight = items[i].style.paddingLeft = items[i].style.marginRight = items[i].style.marginLeft = '';
                     items[i].style.cssText += style;
                 }
                 else {
@@ -154,17 +152,17 @@
             if (!isActive) {
                 doc.head.appendChild(f);
                 if(isTrigger!==true){
-                    Themify.trigger('tfsmartresize');
+                    Themify.trigger('tfsmartresize', {w:Themify.w, h:Themify.h});
                 }
             }
     };
-    Themify.on('builder_load_module_partial', (el,type,isLazy)=>{
+    Themify.on('builder_load_module_partial', (el,isLazy)=>{
         let items;
         if(isLazy===true){
-            if((!el[0].classList.contains('fullwidth') && !el[0].classList.contains('fullwidth_row_container')) || el[0].closest( '.tb_overlay_content_lp' )){
+            if((!el.classList.contains('fullwidth') && !el.classList.contains('fullwidth_row_container')) || el.closest( '.tb_overlay_content_lp' )){
                 return;
             }
-            items=[el[0]];
+            items=[el];
         }
         else{
             items = Themify.selectWithParent('.fullwidth.module_row,.fullwidth_row_container.module_row',el);
@@ -173,7 +171,7 @@
             init(items,false);
         }
     })
-    .on('tfsmartresize',(e)=>{
+    .on('tfsmartresize',e=>{
         if(resize===false && e && e.w!==Themify.w){
             resize=true;
             init(doc.querySelectorAll('.fullwidth.module_row,.fullwidth_row_container.module_row'));

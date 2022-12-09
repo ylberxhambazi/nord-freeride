@@ -1,24 +1,15 @@
-((Themify) =>{
-
-    Themify.on( 'builder_load_module_partial', ( el, type, isLazy)=>{
-        if ( Themify.is_builder_active || ( isLazy === true && ! el[0].dataset.tb_link ) ) {
-            return;
+(doc=>{
+    doc.body.tfOn('click',e=>{
+        const item=e.target && !e.target.closest( 'a' )?e.target.closest('[data-tb_link]'):null;
+        if(item){
+            e.preventDefault();
+            const link = doc.createElement('a');
+            link.href = item.dataset.tb_link;
+            link.style.display = 'none';
+            doc.body.appendChild( link ); /* add to body to ensure proper click events are triggered */
+            link.click();
+            link.remove();
         }
-        const items = Themify.selectWithParent( '[data-tb_link]', el );
-        for ( let i = items.length-1; i > -1; --i ) {
+    });
 
-			items[i].addEventListener( 'click', function( e ){
-				if ( e.target.tagName === 'A' || e.target.closest( 'a' ) ) {
-					return;
-				}
-				e.preventDefault();
-				e.stopPropagation();
-				const link = document.createElement('a');
-				link.href = this.dataset.tb_link;
-				link.click();
-			} );
-
-		}
-	} );
-
-})(Themify);
+})(document);

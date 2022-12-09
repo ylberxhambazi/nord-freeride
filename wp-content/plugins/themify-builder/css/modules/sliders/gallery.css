@@ -14,7 +14,7 @@
 	margin:1em 0 0;
 	line-height:1
 }
-.module-gallery.layout-slider .tf_swiper-wrapper[style*="transition-duration: 0ms"] .tf_swiper-slide-active .slide-content{
+.module-gallery.layout-slider .tf_swiper-wrapper[style*="transition-duration:0ms"] .tf_swiper-slide-active .slide-content{
 	transform:translateY(0);
 	opacity:1
 }

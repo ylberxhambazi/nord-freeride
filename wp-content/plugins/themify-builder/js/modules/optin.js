@@ -4,8 +4,8 @@
 ;
 (($,Themify)=>{
     'use strict';
-    const _captcha = (el) =>{
-        const sendForm =(form)=>{
+    const _captcha = el =>{
+        const sendForm =form=>{
                 const data = new FormData(form),
                     recaptcha_rsp = form.querySelector('[name="g-recaptcha-response"]');
                 //data.append("action", "tb_optin_subscribe");
@@ -13,7 +13,7 @@
                     data.append('contact-recaptcha', recaptcha_rsp.value);
                 }
                 $.ajax( {
-                    url : form.getAttribute('action'),
+                    url : form.action,
                     method: 'POST',
                     processData: false,
                     contentType: false,
@@ -27,7 +27,7 @@
                                 $(form).fadeOut().closest( '.module' ).find( '.tb_optin_success_message' ).fadeIn();
                             }
                         } else {
-                            window.console && console.log( resp.data.error );
+                            console.log( resp.data.error );
                         }
                     },
                     complete() {
@@ -38,24 +38,24 @@
                     }
                 } );
             },
-            callback = (el)=>{
+            callback = el=>{
                 if (!Themify.is_builder_active) {
-                    el.addEventListener('submit',function(e){
+                    el.tfOn('submit',function(e){
                         e.preventDefault();
                         const form = this;
                         if (form.classList.contains('processing')) {
                             return false;
                         }
                         form.className+=' processing';
-                        const cp = el.getElementsByClassName('themify_captcha_field')[0];
-                        if(cp && 'v3' === cp.dataset['ver'] && typeof grecaptcha !== 'undefined'){
+                        const cp = el.tfClass('themify_captcha_field')[0];
+                        if(cp && 'v3' === cp.dataset.ver && typeof grecaptcha !== 'undefined'){
                             grecaptcha.ready(()=> {
-                                grecaptcha.execute(cp.dataset['sitekey'], {action: 'captcha'}).then(token=> {
+                                grecaptcha.execute(cp.dataset.sitekey, {action: 'captcha'}).then(token=> {
                                     const inp = document.createElement('input');
                                     inp.type='hidden';
                                     inp.name='g-recaptcha-response';
                                     inp.value=token;
-                                    form.insertBefore(inp, form.firstChild);
+                                    form.prepend(inp);
                                     sendForm(form);
                                 });
                             });
@@ -65,18 +65,16 @@
                     });
                 }
             },
-            cp = el.getElementsByClassName('themify_captcha_field')[0];
+            cp = el.tfClass('themify_captcha_field')[0];
         if (cp && typeof grecaptcha === 'undefined') {
-            const key=cp.getAttribute('data-sitekey');
+            const key=cp.dataset.sitekey;
             if(key){
-                let url = 'https://www.google.com/recaptcha/api.js';
-                if( 'v3' === cp.getAttribute('data-ver')){
+                let url = 'https://www.google.com/recaptcha/api';
+                if( 'v3' === cp.dataset.ver){
                     url+='?render='+key;
                 }
-                Themify.LoadAsync(url, ()=>{
+                Themify.loadJs(url,typeof grecaptcha !== 'undefined',false).then(()=>{
                     callback(el);
-                }, false, true, ()=> {
-                    return typeof grecaptcha !== 'undefined';
                 });
             }
         }
@@ -84,8 +82,8 @@
             callback(el);
         }
     };
-    Themify.on('builder_load_module_partial', (el,type,isLazy)=>{
-        if(isLazy===true && !el[0].classList.contains('module-optin')){
+    Themify.on('builder_load_module_partial', (el,isLazy)=>{
+        if(isLazy===true && !el.classList.contains('module-optin')){
             return;
         }
         const forms = Themify.selectWithParent('tb_optin_form',el);

@@ -81,7 +81,7 @@
 .module-slider .post{
     animation-name:inherit!important
 }
-@media screen and (max-width:680px){
+@media (max-width:680px){
     .module-slider.slider-agency .slide-inner-wrap{
         flex-flow:wrap;
 		flex-direction:column
