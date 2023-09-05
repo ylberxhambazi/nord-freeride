@@ -1,0 +1,524 @@
+.tf_vd_wr{
+	position:absolute;
+    top:100%;
+    left:0;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    font-family:Helvetica,Arial;
+    padding:7px 20px;
+    transform:translateY(-100%);
+    transition:.3s .5s;
+    transition-property:transform,opacity;
+    background:linear-gradient(transparent,rgba(0,0,0,.35));
+    z-index:999;
+    color:#fff
+}
+.tf_vd_lazy.tf_vd_show .tf_vd_wr,
+.tf_vd_lazy:hover .tf_vd_wr{
+	transition-delay:.2s;
+	opacity:1;
+	transform:translateY(-100%)
+}
+.tf_vd_lazy{
+	font-size:13px;
+	color:#fff;
+	z-index:5;
+	display:flex
+}
+.tf_vd_lazy button{
+    background:0;
+    border:0;
+    padding:0;
+    margin:0;
+    outline:0;
+    border-radius:0;
+    color:#fff;
+    font-size:inherit;
+    font-weight:400;
+	line-height:normal;
+    letter-spacing:normal;
+    transform:none;
+    box-shadow:none;
+	text-decoration:none;
+    min-width:auto;
+	max-width:none;
+    width:auto;
+    transition:none
+}
+.tf_vd_lazy button:focus-visible{
+	outline:1px solid #fff
+}
+.tf_vd_download{
+    color:#fff
+}
+.tf_vd_download:hover,
+.tf_is_pip button.tf_vd_pip,
+.tf_vd_lazy button:hover{
+    background:0;
+    color:#0073aa;
+    transform:none;
+    box-shadow:none
+}
+.tf_vd_ctl{
+    display:grid;
+    font-size:1.5em;
+    align-items:center;
+    grid-auto-flow:column;
+    column-gap:15px
+}
+.tf_vd_lazy button.tf_vd_mute,
+.tf_vd_lazy button.tf_vd_pip,
+.tf_vd_lazy button.tf_vd_airplay,
+.tf_vd_lazy button.tf_vd_full{
+    width:1em;
+    height:1em;
+    display:flex;
+    align-items:center
+}
+button.tf_vd_pip .tf_fa{
+    width:1em
+}
+.tf_vd_pr_wr{
+    background:rgba(255,255,255,.8);
+    flex-grow:1;
+    height:10px;
+    border-radius:3px
+}
+.tf_vd_wait .tf_vd_pr_wr{
+    background:linear-gradient(-45deg,rgba(255,255,255,.4) 25%,transparent 0,transparent 50%,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 75%,transparent 0,transparent);
+    background-size:15px 15px;
+    animation:tf-buffering-stripes 2s linear infinite
+}
+@keyframes tf-buffering-stripes{
+    0%{background-position:0 0}
+    to{background-position:30px 0}
+}
+.tf_vd_pr_wr div{
+    transform-origin:0 0;
+    transform:scaleX(0);
+    contain:strict;
+    transition:transform .2s linear;
+    border-radius:inherit
+}
+.tf_vd_pr_ld{
+	background:#fff;
+    z-index:1
+}
+.tf_vd_cur{
+    background:#0073aa;
+    z-index:2
+}
+.tf_vd_wr input.tf_vd_vol,
+.tf_vd_wr input.tf_vd_pr{
+    cursor:pointer;
+    z-index:3;
+    display:block;
+    width:100%;
+	min-width:auto;
+	max-width:none;
+    opacity:0;
+    margin:0;
+    padding:0;
+    border:0;
+    outline:0;
+    border-radius:0;
+    background:0;
+	transition:none;
+	-webkit-appearance:none;
+	-moz-appearance:none;
+	appearance:none;
+    direction:ltr;
+	transform:none
+}
+.tf_vd_wr .tf_vd_pr::-webkit-slider-runnable-track{
+	cursor:inherit;
+    cursor:inherit;
+    height:auto;
+    width:100%;
+	box-shadow:none;
+	background:0;
+    border:0;
+	border:0;
+	padding:0;
+    margin:0
+}
+.tf_vd_wr .tf_vd_pr::-moz-range-track{
+	cursor:inherit;
+    cursor:inherit;
+    height:auto;
+    width:100%;
+	box-shadow:none;
+	background:0;
+    border:0;
+	border:0;
+	padding:0;
+    margin:0
+}
+.tf_vd_wr .tf_vd_pr::-webkit-slider-thumb{
+	-webkit-appearance:none;
+	appearance:none;
+    width:10px;
+	height:auto;
+    cursor:inherit;
+	box-shadow:none;
+    background:0;
+    border:0;
+	padding:0;
+    margin:0
+}
+.tf_vd_wr .tf_vd_pr::-moz-range-thumb{
+	-moz-appearance:none;
+	appearance:none;
+    width:10px;
+	height:auto;
+    cursor:inherit;
+	box-shadow:none;
+    background:0;
+    border:0;
+	padding:0;
+    margin:0
+}
+.tf_vd_wr input.tf_vd_vol{
+    background:0;
+    opacity:1;
+	cursor:s-resize
+}
+.tf_vd_wr .tf_vd_vol::-webkit-slider-thumb{
+    -webkit-appearance:none;
+	appearance:none;
+    cursor:inherit;
+    box-shadow:-100vw 0 0 100vw #fff;
+    height:8px;
+    width:0;
+	background:0;
+    border:0;
+	padding:0;
+    margin:0
+}
+.tf_vd_wr .tf_vd_vol::-moz-range-thumb{
+	-moz-appearance:none;
+	appearance:none;
+    cursor:inherit;
+    box-shadow:-100vw 0 0 100vw #fff;
+    height:8px;
+    width:0;
+	background:0;
+    border:0;
+	padding:0;
+    margin:0
+}
+.tf_vd_pr_wr .tf_vd_hover{
+	transition:none;
+    color:#fff;
+    font-size:10px;
+    z-index:4;
+	border-radius:50em;
+    background:#000;
+    bottom:100%;
+    top:auto;
+    left:auto;
+    right:auto;
+    line-height:normal;
+    padding:3px 6px 7px;
+    display:inline-flex;
+    flex-direction:column;
+    place-items:center;
+    contain:style layout;
+	margin-block-end:7px;
+	margin-inline-start:2px
+}
+.tf_vd_hover.tf_abs:after{
+    content:'';
+    width:0;
+    height:0;
+    border:7px solid transparent;
+    border-block-end-width:0;
+    border-block-start-color:#333;
+    margin-block-end:-11px
+}
+.tf_vd_play:before{
+    display:inline-block;
+    content:"";
+    width:0;
+    height:0;
+    border:0 solid transparent;
+    border-width:.7em 0 .7em 1.4em;
+    border-left-color:currentColor;
+    vertical-align:middle;
+    margin-top:-4px;
+    transition:.1s height linear,.1s border-width linear
+}
+.tf_vd_play.tf_vd_pw_play{
+    top:25px;
+	inset-inline:auto 10px;
+	z-index:501
+}
+.tf_vd_total,
+.tf_vd_time{
+    margin:0 12px
+}
+.tf_vd_playing .tf_vd_play:before{
+    border-style:double;
+    border-width:0 .4em 0 1em;
+    height:14px
+}
+.tf_vd_mute svg.tf_fa{
+    width:100%;
+    transition:transform .1s,visibility .1s
+}
+.tf_muted .tf-fas-volume-up,
+.tf_vd_mute .tf-fas-volume-mute{
+	visibility:hidden;
+	transform:translateX(-100%)
+}
+.tf_muted .tf-fas-volume-mute{
+	visibility:visible;
+	transform:translateX(0)
+}
+.tf_vd_lazy button.tf_vd_big_btn{
+	transition:opacity .3s;
+	z-index:502;
+	border-radius:100%;
+	padding:1.2em 1.05em;
+	background:#fff;
+    transform:translate(-50%,-50%);
+	color:#000
+}
+.tf_vd_lazy .tf_vd_big_btn:before{
+	margin:0 0 0 4px;
+	font-size:1.3em
+}
+.tf_vd_playing .tf_vd_big_btn:before{
+	margin:0 -2px 0 6px;
+	height:23px
+}
+.tf_vd_playing button.tf_vd_big_btn{
+	opacity:0
+}
+.tf_play_disabled{
+    opacity:.5
+}
+.tf_vd_vol_in{
+    width:115px;
+    flex-grow:1;
+    background:rgba(255,255,255,.33);
+    height:8px;
+    position:absolute;
+    transform:rotate(-90deg) scaleX(0);
+	transition:transform .5s .3s;
+    top:-18px;
+    left:5px;
+    transform-origin:8px 8px;
+    z-index:502
+}
+.tf_vd_vol_wr:hover .tf_vd_vol_in{
+	transition-delay:.1s;
+	transform:rotate(-90deg) scaleX(1)
+}
+.tf_vd_vol_in:after,
+.tf_vd_vol_in:before{
+	content:'';
+	width:100%;
+	height:8px;
+	position:absolute;
+	top:0;
+	left:0;
+	transform:translateY(-100%)
+}
+.tf_vd_vol_in:after{
+	transform:translateY(100%)
+}
+.tf_vd_hide_ctl{
+	cursor:none
+}
+.tf_vd_lazy.tf_is_fullscreen video{
+	height:100%;
+	object-fit:contain
+}
+.tf_vd_hide_ctl.tf_is_fullscreen .tf_vd_wr,
+.tf_vd_playing .tf_vd_wr{
+	transition-delay:1.5s;
+	opacity:0;
+	transform:translateY(100%)
+}
+.wp-video-playlist .tf_vd_lazy:not(.tf_pl_hidden) .tf_vd_wr{
+	opacity:0;
+	transform:translateY(100%)
+}
+.tf_vd_lazy .tf_loader{
+    z-index:502;
+	display:none;
+    font-size:5em
+}
+.tf_vd_lazy .tf_loader:before{
+	border:.1em solid rgba(255,255,255,.5);
+    border-left-color:rgba(255,255,255,.9)
+}
+.tf_vd_wait .tf_loader{
+	display:block
+}
+.tf_vd_lazy input:active,
+.tf_vd_lazy input:active + div,
+.tf_vd_lazy button:active{
+    outline:none!important
+}
+.tf_vd_lazy button.tf_vd_sk{
+	background:rgba(0,0,0,.6);
+	border-radius:50%;
+	opacity:0;
+	top:50%;
+	left:15px;
+	width:6em;
+	height:6em;
+	transform:translateY(-50%);
+	transition:opacity .3s;
+	z-index:502;
+	content-visibility:auto;
+	pointer-events:none;
+	color:#fff;
+    font-size:.7em
+}
+.tf_vd_show button.tf_vd_big_btn,
+.tf_vd_show button.tf_vd_sk{
+	pointer-events:auto;
+	opacity:1
+}
+.tf_vd_lazy button.tf_vd_sk_right{
+	left:auto;
+	right:15px
+}
+.tf_vd_sk span{
+    display:block;
+    font-size:.8em
+}
+.tf_vd_sk .tf_fa{
+    font-size:3.2em
+}
+
+.wp-playlist-prev,
+.wp-playlist-next,
+.tf_hide.tf_vd_hover,
+.tf_vd_end .tf_vd_play:before{
+	display:none
+}
+.tf_vd_end .tf_hide.tf-fas-undo{
+	display:inline-block;
+	font-size:1.3em
+}
+@media (pointer:coarse){
+	.tf_vd_wr{
+		padding:7px
+	}
+	.tf_vd_mute:focus + .tf_vd_vol_in{
+		transition-delay:.1s;
+		transform:rotate(-90deg) scaleX(1)
+	}
+	.tf_vd_wr input.tf_vd_pr{
+		padding-block-end:20px
+	}
+}
+.tf_pl_wr{
+	position:absolute;
+	top:0;
+    right:0;
+	width:25%;
+    display:flex;
+    flex-wrap:wrap;
+    color:#fff;
+    transition:transform .3s,opacity .3s;
+    background:#000
+}
+.tf_pl{   
+	display:grid;
+    grid-template-rows:repeat(auto-fill,minmax(80px, 1fr));
+    row-gap:10px; 
+    overflow-y:auto;
+    line-height:normal;
+    padding-block-end:50px;
+    transform:translateY(35px);
+    border-top:1px solid #666060
+}
+.tf_pl_item{
+    display:grid;
+    grid-template-columns:1fr 2fr;
+    padding:10px;
+	padding-inline:10px 5px;
+    column-gap:10px;
+    background:#101010;
+	transition:background .3s;
+    cursor:pointer
+}
+.tf_pl_selected,
+.tf_pl_item:hover{
+	background:rgba(255,255,255,.1)
+}
+.tf_pl_selected video{
+	outline:1px solid #f00
+}
+.tf_pl_info{
+    display:grid;
+    row-gap:5px
+}
+.tf_pl_duration{
+    position:absolute;
+    font-size:10px;
+    background:#000;
+    bottom:0;
+    inset-inline-end:0;
+    padding:0 4px
+}
+.tf_pl video{
+    height:100%
+}
+.tf_pl_title{
+    height:35px;
+    font-size:13px
+}
+.tf_pl_cap{
+    text-overflow:ellipsis;
+    white-space:nowrap;
+	color:#b8b8b8;
+    font-size:11px
+}
+.tf_pl_selected_title{
+    max-width:80%;
+    margin:4px 0 0;
+	margin-inline-start:10px;
+    text-overflow:ellipsis;
+    white-space:nowrap
+}
+.tf_vd_lazy .tf_pl_close{
+    width:16px;
+    height:16px;
+	margin:10px;
+    background:0;
+	margin-inline:auto auto
+}
+.tf_vd_lazy .tf_pl_open{
+    position:absolute;
+    top:10px;
+    right:10px;
+    width:25px;
+    height:25px;
+    grid-template-rows:1fr 1fr 1fr; 
+    grid-auto-flow:column;
+    transform:none;
+    gap:2px;
+    background:0;
+    box-shadow:none;
+    color:inherit
+}
+.tf_pl_open span{
+	background:#dfe4da;
+	border-radius:3px
+}
+.tf_pl_hidden .tf_pl_open{
+    display:grid
+}
+.tf_pl_hidden .tf_pl_wr{
+    pointer-events:none;
+	opacity:0;
+	transform:translateX(100%)
+}
